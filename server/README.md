@@ -1,6 +1,6 @@
-# JMK · Backend Server (v1.1)
+# JMK · Backend Server (v1.2)
 
-Node.js + Express + SQLite REST API + WebSocket chat. Powers cross-device sync για τα 4 JMK apps (Guest, Hotelier, Partner, Admin).
+Node.js + Express + SQLite REST API + WebSocket chat + Cloudinary uploads. Powers cross-device sync για τα 4 JMK apps (Guest, Hotelier, Partner, Admin).
 
 **Τι περιλαμβάνει:**
 - REST API (CRUD για όλες τις οντότητες)
@@ -12,6 +12,11 @@ Node.js + Express + SQLite REST API + WebSocket chat. Powers cross-device sync �
 - **Itinerary generator** (3 weather-aware πλάνα/μέρα)
 - **Payment processing** (Stripe ή stub mode)
 - **Email notifications** (log/Resend/SendGrid)
+- **Photo/video uploads** (Cloudinary ή local) με auto-resize
+- **Availability calendar** ανά activity (recurring weekly + blocked dates + time slots με capacity)
+- **Dynamic pricing** (high season, weekend, last-minute, group discounts)
+- **Inventory check** πριν δημιουργηθεί booking — όχι double-booking
+- **Airbnb-style activity fields** (includes/excludes, languages, rules, cancellation policy)
 - Long-poll sync για clients χωρίς WebSockets
 - PostgreSQL migration script έτοιμο για production scale
 
@@ -30,7 +35,7 @@ node server.js
 Δοκίμασε ότι όλα δουλεύουν:
 ```bash
 bash tests/e2e.sh
-# Πρέπει να δεις: Passed: 26  Failed: 0
+# Πρέπει να δεις: Passed: 46  Failed: 0
 ```
 
 ---
@@ -60,6 +65,9 @@ bash tests/e2e.sh
 | `SENDGRID_API_KEY` | (none) | Real email μέσω SendGrid |
 | `EMAIL_FROM` | `JMK <noreply@jmk.app>` | From address |
 | `EMAIL_MODE` | auto-detected | `log`, `resend`, ή `sendgrid` |
+| `CLOUDINARY_URL` | (none) | Αν δοθεί → photos uploads πάνε σε Cloudinary CDN |
+| `CLOUDINARY_CLOUD_NAME`/`API_KEY`/`API_SECRET` | (none) | Εναλλακτικά αντί CLOUDINARY_URL |
+| `UPLOAD_DIR` | `./uploads` | Local storage path (αν δεν χρησιμοποιείς Cloudinary) |
 
 ---
 
@@ -140,6 +148,36 @@ POST   /api/reviews                        { bookingId, rating, text, lang }
 ```
 Auto-transitions booking σε `reviewed` και ενημερώνει partner rating.
 
+### Photo Uploads (NEW v1.2)
+```
+POST   /api/uploads                        multipart, field 'files', μέχρι 10 αρχεία/request
+                                           body: activityId? (auto-attach)
+DELETE /api/uploads/:id?activityId=...     διαγραφή
+PATCH  /api/activities/:id/photos          { order: ['id1','id2',...] } reorder
+GET    /uploads/:filename                  static serve (μόνο σε local mode)
+```
+Dual-mode: αν `CLOUDINARY_URL` env var → Cloudinary (auto-resize, fast CDN). Αλλιώς local disk.
+
+### Availability & Calendar (NEW v1.2)
+```
+GET    /api/activities/:id/availability?from=YYYY-MM-DD&to=YYYY-MM-DD
+PATCH  /api/activities/:id/schedule        { weekly, timeSlots, blockedDates, ... }
+POST   /api/activities/:id/block-dates     { dates: ['YYYY-MM-DD',...] }
+POST   /api/activities/:id/unblock-dates   { dates: ['YYYY-MM-DD',...] }
+```
+
+### Dynamic Pricing (NEW v1.2)
+```
+GET    /api/activities/:id/price-preview?date=&time=&people=
+PATCH  /api/activities/:id/pricing         { base, highSeason, weekend, lastMinute, groupDiscounts }
+```
+
+### Activity Details (NEW v1.2)
+```
+PATCH  /api/activities/:id/details         { includes, excludes, languages, rules, cancellationPolicy, minAge }
+GET    /api/cancellation-policies          catalog (flexible/moderate/strict)
+```
+
 ### WebSocket Chat (NEW v1.1)
 ```
 WS     /ws
@@ -180,13 +218,17 @@ server/
 │   ├── weather.js         # Open-Meteo wrapper με 1h cache
 │   ├── qr.js              # QR code generation (qrcode library)
 │   ├── email.js           # Email wrapper (log/Resend/SendGrid)
-│   └── payments.js        # Stripe wrapper με stub mode
+│   ├── payments.js        # Stripe wrapper με stub mode
+│   ├── uploads.js         # Photo/video uploads (Cloudinary + local fallback)
+│   ├── availability.js    # Calendar, weekly schedule, time slots, blocked dates
+│   └── pricing.js         # Dynamic pricing (season/weekend/group/last-minute)
 ├── postgres/
-│   ├── schema.sql         # Production-ready Postgres schema
+│   ├── schema.sql         # Production-ready Postgres schema (base)
+│   ├── schema_v1_2.sql    # v1.2 additions (photos, availability, pricing)
 │   ├── migrate.js         # SQLite → Postgres migration
 │   └── README.md          # Πότε & πώς να μετακομίσεις σε Postgres
 └── tests/
-    └── e2e.sh             # Smoke test 26 assertions
+    └── e2e.sh             # Smoke test 46 assertions
 ```
 
 ---
@@ -239,7 +281,7 @@ node postgres/migrate.js
 npm test    # ή: bash tests/e2e.sh
 ```
 
-26 assertions: health → reset → seed verification → commission preview → weather → itinerary → QR (PNG+SVG) → booking creation → anti-bypass → state machine → payment → review → auth.
+46 assertions: health → reset → seed → commission → weather → itinerary → QR → booking → anti-bypass → state machine → payment → review → auth → photos in seed → schedule → pricing rules → availability → block/unblock dates → double-booking rejection → dynamic pricing → group discount → activity details update → photo upload.
 
 Πριν τρέξει, βεβαιώσου ότι το server τρέχει στο `:3000` (ή set `BASE=http://...`).
 

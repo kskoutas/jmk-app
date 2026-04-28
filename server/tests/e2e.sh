@@ -91,12 +91,17 @@ QR_SVG=$(curl -s "$BASE/api/qr/hotel/h-naxos-1?format=svg")
 assert_contains "$QR_SVG" '<svg' "SVG QR"
 
 # ---- 8. Booking creation ----
+# Note: pricing is dynamic (high season/weekend/group). Use a low-season weekday to keep math predictable.
 log "Booking flow"
 B=$(curl -s -X POST "$BASE/api/bookings" -H 'Content-Type: application/json' \
-    -d '{"activityId":"a-cruise","hotelId":"h-naxos-1","guestId":"g-maria","date":"2026-08-01","time":"10:00","people":2}')
+    -d '{"activityId":"a-cruise","hotelId":"h-naxos-1","guestId":"g-maria","date":"2026-06-03","time":"09:00","slotId":"ts-boat-0","people":2}')
 assert_contains "$B" '"status":"chat"' "booking created with status=chat"
-assert_contains "$B" '"jmkCommission":22' "JMK gets 10% (22 of 220)"
-assert_contains "$B" '"hotelCommission":22' "Hotel gets 10% (22 of 220)"
+# Verify 10/10 invariant: jmkCommission == hotelCommission (regardless of total)
+INV=$(echo "$B" | node -e "process.stdin.on('data',d=>{const j=JSON.parse(d);console.log(j.jmkCommission===j.hotelCommission?'eq':'neq')})")
+if [ "$INV" = "eq" ]; then pass "10/10 invariant: JMK == Hotel commission"; else fail "10/10 invariant broken"; fi
+# Verify both equal 10% of totalAmount
+PCT=$(echo "$B" | node -e "process.stdin.on('data',d=>{const j=JSON.parse(d);const r=Math.round((j.jmkCommission/j.totalAmount)*100);console.log(r)})")
+if [ "$PCT" = "10" ]; then pass "JMK = 10% of total"; else fail "JMK percentage wrong: $PCT%"; fi
 BID=$(echo "$B" | node -e "process.stdin.on('data',d=>console.log(JSON.parse(d).id))")
 echo "  → bookingId: $BID"
 
@@ -142,6 +147,79 @@ TOKEN=$(echo "$REG" | node -e "process.stdin.on('data',d=>console.log(JSON.parse
 
 ME=$(curl -s "$BASE/api/auth/me" -H "Authorization: Bearer $TOKEN")
 assert_contains "$ME" "$EMAIL" "GET /me returns user"
+
+# ============================================================
+# v1.2 — Airbnb-style features
+# ============================================================
+
+# ---- Photos enriched in seed ----
+log "Activity has photos"
+ACT=$(curl -s "$BASE/api/collections/activities/a-cruise")
+assert_contains "$ACT" 'unsplash.com' "activity has Unsplash photos in seed"
+assert_contains "$ACT" '"isCover":true' "first photo marked as cover"
+
+# ---- Schedule ----
+log "Activity has schedule (timeSlots, weekly)"
+assert_contains "$ACT" '"timeSlots"' "schedule.timeSlots present"
+assert_contains "$ACT" '"weekly"' "schedule.weekly present"
+
+# ---- Pricing rules ----
+log "Activity has pricing rules"
+assert_contains "$ACT" '"highSeason"' "pricing.highSeason present"
+assert_contains "$ACT" '"weekend"' "pricing.weekend present"
+
+# ---- Availability endpoint ----
+log "Availability endpoint"
+TODAY=$(date +%Y-%m-%d)
+NEXT_MONTH=$(date -v+30d +%Y-%m-%d 2>/dev/null || date -d "+30 days" +%Y-%m-%d)
+AVAIL=$(curl -s "$BASE/api/activities/a-cruise/availability?from=$TODAY&to=$NEXT_MONTH")
+assert_contains "$AVAIL" '"days"' "availability returns days array"
+assert_contains "$AVAIL" '"isOpen"' "days have isOpen flag"
+assert_contains "$AVAIL" '"slots"' "days have slots"
+
+# ---- Block date ----
+log "Block & unblock date"
+FUTURE=$(date -v+5d +%Y-%m-%d 2>/dev/null || date -d "+5 days" +%Y-%m-%d)
+BL=$(curl -s -X POST "$BASE/api/activities/a-cruise/block-dates" -H 'Content-Type: application/json' -d "{\"dates\":[\"$FUTURE\"]}")
+assert_contains "$BL" "$FUTURE" "blocked date returned"
+
+# Booking on blocked date should fail
+BAD=$(curl -s -w "|HTTP:%{http_code}" -X POST "$BASE/api/bookings" -H 'Content-Type: application/json' \
+   -d "{\"activityId\":\"a-cruise\",\"hotelId\":\"h-naxos-1\",\"guestId\":\"g-maria\",\"date\":\"$FUTURE\",\"time\":\"09:00\",\"slotId\":\"ts-boat-0\",\"people\":2}")
+assert_contains "$BAD" "HTTP:409" "booking on blocked date returns 409"
+assert_contains "$BAD" "slot_unavailable" "error message correct"
+
+# Unblock
+UB=$(curl -s -X POST "$BASE/api/activities/a-cruise/unblock-dates" -H 'Content-Type: application/json' -d "{\"dates\":[\"$FUTURE\"]}")
+
+# ---- Pricing preview ----
+log "Dynamic pricing preview"
+PP=$(curl -s "$BASE/api/activities/a-cruise/price-preview?date=$FUTURE&time=09:00&people=2")
+assert_contains "$PP" '"total"' "pricing returns total"
+assert_contains "$PP" '"breakdown"' "pricing shows breakdown"
+
+# Group discount: 6 ppl should trigger discount
+PP6=$(curl -s "$BASE/api/activities/a-cruise/price-preview?date=$FUTURE&time=09:00&people=6")
+assert_contains "$PP6" '"group_discount"' "6 ppl triggers group discount"
+
+# ---- Activity details update ----
+log "Activity details update"
+DET=$(curl -s -X PATCH "$BASE/api/activities/a-cruise/details" -H 'Content-Type: application/json' \
+    -d '{"languages":["el","en","de"],"rules":["No smoking","No pets"]}')
+assert_contains "$DET" '"de"' "languages updated"
+assert_contains "$DET" 'No smoking' "rules updated"
+
+# ---- Photo upload (test with tiny PNG) ----
+log "Photo upload"
+# Create a 1x1 PNG via base64
+echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > /tmp/jmk-test.png
+UP=$(curl -s -X POST "$BASE/api/uploads" -F "files=@/tmp/jmk-test.png" -F "activityId=a-wine")
+assert_contains "$UP" '"uploads"' "upload returns uploads array"
+assert_contains "$UP" '"url"' "uploaded file has url"
+
+# ---- Verify photo attached ----
+WINE=$(curl -s "$BASE/api/collections/activities/a-wine")
+assert_contains "$WINE" 'jmk-test\|local\|cloudinary' "uploaded photo attached to activity"
 
 # ---- Summary ----
 echo ""

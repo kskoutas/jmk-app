@@ -36,13 +36,16 @@ const bcrypt               = require('bcryptjs');
 const jwt                  = require('jsonwebtoken');
 
 // Feature modules
-const commission = require('./lib/commission');
-const weather    = require('./lib/weather');
-const itinerary  = require('./lib/itinerary');
-const qr         = require('./lib/qr');
-const chat       = require('./lib/chat');
-const email      = require('./lib/email');
-const payments   = require('./lib/payments');
+const commission   = require('./lib/commission');
+const weather      = require('./lib/weather');
+const itinerary    = require('./lib/itinerary');
+const qr           = require('./lib/qr');
+const chat         = require('./lib/chat');
+const email        = require('./lib/email');
+const payments     = require('./lib/payments');
+const uploads      = require('./lib/uploads');
+const availability = require('./lib/availability');
+const pricing      = require('./lib/pricing');
 
 const PORT       = process.env.PORT || 3000;
 const DB_PATH    = process.env.DB_PATH    || path.join(__dirname, 'jmk.sqlite');
@@ -105,7 +108,8 @@ function seedAll() {
     const now = Date.now();
     Object.keys(SEED).forEach(coll => {
       if (coll === 'settings' || coll === '_meta') return;
-      (SEED[coll] || []).forEach(obj => insColl.run(coll, obj.id, JSON.stringify(obj), now, now));
+      if (!Array.isArray(SEED[coll])) return;   // skip non-array exports (e.g. catalog objects)
+      SEED[coll].forEach(obj => insColl.run(coll, obj.id, JSON.stringify(obj), now, now));
     });
     if (SEED.settings) Object.keys(SEED.settings).forEach(k => insSet.run(k, JSON.stringify(SEED.settings[k])));
     insMeta.run('seeded', String(now));
@@ -290,10 +294,10 @@ app.get('/api/commission/preview', (req, res) => {
 });
 
 // ---------- Booking flow ----------
-// POST /api/bookings { activityId, hotelId, guestId, date, time, people }
-// Δημιουργεί booking με σωστό commission split και state='chat'
+// POST /api/bookings { activityId, hotelId, guestId, date, time, slotId?, people }
+// Δημιουργεί booking με: dynamic pricing, availability check, commission split, state='chat'
 app.post('/api/bookings', (req, res) => {
-  const { activityId, hotelId, guestId, date, time, people } = req.body || {};
+  const { activityId, hotelId, guestId, date, time, slotId, people } = req.body || {};
   if (!activityId || !hotelId || !guestId) return res.status(400).json({ error: 'activityId, hotelId, guestId required' });
   const activity = getOne('activities', activityId);
   if (!activity) return res.status(404).json({ error: 'activity not found' });
@@ -301,7 +305,31 @@ app.post('/api/bookings', (req, res) => {
   if (!hotel) return res.status(404).json({ error: 'hotel not found' });
 
   const ppl = Math.max(1, Number(people) || 1);
-  const totalAmount = Number(activity.price) * ppl;
+  const bookingDate = date || new Date().toISOString().slice(0, 10);
+
+  // ---- Availability / inventory check ----
+  if (activity.schedule && activity.schedule.timeSlots) {
+    const allBookings = db.prepare('SELECT data FROM collections WHERE collection=?').all('bookings').map(r => JSON.parse(r.data));
+    const activityBookings = allBookings.filter(b => b.activityId === activityId);
+    const targetSlotId = slotId || (time && activity.schedule.timeSlots.find(s => s.time === time)?.id);
+    if (targetSlotId) {
+      const check = availability.isSlotAvailable(activity, bookingDate, targetSlotId, ppl, activityBookings);
+      if (!check.ok) {
+        const next = availability.nextAvailableSlots(activity, bookingDate, 5, activityBookings);
+        return res.status(409).json({
+          error:    'slot_unavailable',
+          reason:   check.reason,
+          remaining: check.remaining,
+          nextAvailable: next
+        });
+      }
+    }
+  }
+
+  // ---- Dynamic pricing ----
+  const priced = pricing.compute({ activity, date: bookingDate, time: time || '10:00', people: ppl });
+  const totalAmount = priced.total;
+
   const split = commission.calc(totalAmount, {
     hotelCommissionPct: hotel.commissionPct,
     settings: getSettingsObj()
@@ -313,14 +341,17 @@ app.post('/api/bookings', (req, res) => {
     partnerId: activity.partnerId,
     hotelId,
     guestId,
-    date: date || new Date().toISOString().slice(0, 10),
+    date: bookingDate,
     time: time || '10:00',
+    slotId: slotId || null,
     people: ppl,
+    unitPrice: priced.unitPrice,
     totalAmount: split.total,
     partnerAmount: split.partnerAmount,
     hotelCommission: split.hotelCommission,
     jmkCommission: split.jmkCommission,
     stripeFee: split.stripeFee,
+    pricingBreakdown: priced.breakdown,
     status: 'chat',
     createdAt: new Date().toISOString(),
     completedAt: null,
@@ -577,6 +608,181 @@ app.post('/api/reviews', (req, res) => {
   res.json(review);
 });
 
+// ============================================================
+// ============  v1.2 — Airbnb-style endpoints  ===============
+// ============================================================
+
+// ---------- Photo / Video Uploads ----------
+// POST /api/uploads (multipart, field name: 'files', μέχρι 10 αρχεία)
+// Body fields: activityId? (για auto-attach στο activity)
+if (uploads.uploader) {
+  app.post('/api/uploads', uploads.uploader.array('files', 10), async (req, res) => {
+    try {
+      const results = [];
+      for (const file of (req.files || [])) {
+        const r = await uploads.saveOne(file, { folder: `jmk/${req.body.activityId || 'misc'}` });
+        results.push(r);
+      }
+
+      // Αν δίνεται activityId, append στο activity.photos[]
+      if (req.body.activityId) {
+        const activity = getOne('activities', req.body.activityId);
+        if (activity) {
+          activity.photos = activity.photos || [];
+          const startOrder = activity.photos.length;
+          for (let i = 0; i < results.length; i++) {
+            activity.photos.push({
+              id:       results[i].id,
+              url:      results[i].url,
+              thumbUrl: results[i].thumbUrl,
+              width:    results[i].width,
+              height:   results[i].height,
+              bytes:    results[i].bytes,
+              mime:     results[i].mime,
+              order:    startOrder + i,
+              isCover:  startOrder === 0 && i === 0,
+              provider: results[i].provider,
+              uploadedAt: new Date().toISOString()
+            });
+          }
+          saveOne('activities', activity);
+        }
+      }
+
+      res.json({ uploads: results, mode: uploads.MODE });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/uploads/:id?activityId=...&resource_type=image
+  app.delete('/api/uploads/:id', async (req, res) => {
+    try {
+      const r = await uploads.deleteOne(decodeURIComponent(req.params.id), { resource_type: req.query.resource_type });
+      if (req.query.activityId) {
+        const activity = getOne('activities', req.query.activityId);
+        if (activity && Array.isArray(activity.photos)) {
+          activity.photos = activity.photos.filter(p => p.id !== req.params.id);
+          saveOne('activities', activity);
+        }
+      }
+      res.json(r);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  // Reorder photos: PATCH /api/activities/:id/photos { order: ['photoId1','photoId2',...] }
+  app.patch('/api/activities/:id/photos', (req, res) => {
+    const activity = getOne('activities', req.params.id);
+    if (!activity) return res.status(404).json({ error: 'activity not found' });
+    const order = req.body.order;
+    if (!Array.isArray(order)) return res.status(400).json({ error: 'order array required' });
+    const map = new Map((activity.photos || []).map(p => [p.id, p]));
+    activity.photos = order.map((id, i) => {
+      const p = map.get(id);
+      if (!p) return null;
+      return Object.assign({}, p, { order: i, isCover: i === 0 });
+    }).filter(Boolean);
+    saveOne('activities', activity);
+    res.json(activity.photos);
+  });
+} else {
+  app.post('/api/uploads', (_req, res) => res.status(501).json({ error: 'uploads disabled — run npm install multer' }));
+}
+
+// Static serve for local uploads
+const localStatic = uploads.staticMiddleware(express);
+if (localStatic) app.use('/uploads', localStatic);
+
+// ---------- Availability ----------
+// GET /api/activities/:id/availability?from=2026-07-01&to=2026-07-31
+app.get('/api/activities/:id/availability', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  const from = req.query.from || new Date().toISOString().slice(0, 10);
+  const to   = req.query.to   || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const allBookings = db.prepare('SELECT data FROM collections WHERE collection=?').all('bookings').map(r => JSON.parse(r.data));
+  const myBookings = allBookings.filter(b => b.activityId === activity.id);
+  const days = availability.getAvailableDates(activity, from, to, myBookings);
+  res.json({ activityId: activity.id, from, to, days });
+});
+
+// PATCH /api/activities/:id/schedule { weekly?, timeSlots?, blockedDates?, ... }
+app.patch('/api/activities/:id/schedule', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  activity.schedule = Object.assign({}, activity.schedule || {}, req.body || {});
+  saveOne('activities', activity);
+  res.json(activity.schedule);
+});
+
+// POST /api/activities/:id/block-dates { dates: ['YYYY-MM-DD', ...] }
+app.post('/api/activities/:id/block-dates', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  const dates = Array.isArray(req.body.dates) ? req.body.dates : [];
+  activity.schedule = activity.schedule || {};
+  const set = new Set([...(activity.schedule.blockedDates || []), ...dates]);
+  activity.schedule.blockedDates = Array.from(set).sort();
+  saveOne('activities', activity);
+  res.json({ blockedDates: activity.schedule.blockedDates });
+});
+
+// DELETE /api/activities/:id/block-dates  body: { dates: [...] }  (unblock)
+app.post('/api/activities/:id/unblock-dates', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  const remove = new Set(req.body.dates || []);
+  activity.schedule = activity.schedule || {};
+  activity.schedule.blockedDates = (activity.schedule.blockedDates || []).filter(d => !remove.has(d));
+  saveOne('activities', activity);
+  res.json({ blockedDates: activity.schedule.blockedDates });
+});
+
+// ---------- Pricing preview ----------
+// GET /api/activities/:id/price-preview?date=2026-08-01&time=10:00&people=4
+app.get('/api/activities/:id/price-preview', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  const result = pricing.compute({
+    activity,
+    date: req.query.date || new Date().toISOString().slice(0, 10),
+    time: req.query.time || '10:00',
+    people: Number(req.query.people) || 1
+  });
+  res.json(result);
+});
+
+// PATCH /api/activities/:id/pricing  (update pricing rules)
+app.patch('/api/activities/:id/pricing', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  activity.pricing = Object.assign({}, activity.pricing || {}, req.body || {});
+  // sync flat price for backwards compat
+  if (typeof activity.pricing.base === 'number') activity.price = activity.pricing.base;
+  saveOne('activities', activity);
+  res.json(activity.pricing);
+});
+
+// ---------- Activity rich update (Airbnb-style fields) ----------
+// PATCH /api/activities/:id/details — includes, excludes, languages, rules, cancellationPolicy
+app.patch('/api/activities/:id/details', (req, res) => {
+  const activity = getOne('activities', req.params.id);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  const allowed = ['title','description','duration','maxPeople','includes','excludes','languages','rules','cancellationPolicy','minAge','minAdvanceHours'];
+  for (const k of allowed) {
+    if (k in req.body) activity[k] = req.body[k];
+  }
+  saveOne('activities', activity);
+  res.json(activity);
+});
+
+// ---------- Cancellation policies catalog ----------
+app.get('/api/cancellation-policies', (_req, res) => {
+  res.json(SEED.cancellationPolicies || {});
+});
+
 // Fallback to index for unknown routes (single-page-style)
 app.get('/', (_req, res) => res.redirect('/JMK_App.html'));
 
@@ -590,6 +796,7 @@ httpServer.listen(PORT, () => {
   console.log(`[JMK] db at ${DB_PATH}`);
   console.log(`[JMK] WebSocket chat: ${wss ? 'enabled at ws://localhost:' + PORT + '/ws' : 'DISABLED (run npm install ws)'}`);
   console.log(`[JMK] QR generation:  ${qr.available ? 'enabled' : 'DISABLED (run npm install qrcode)'}`);
+  console.log(`[JMK] Photo uploads:  ${uploads.available ? `enabled (${uploads.MODE} mode)` : 'DISABLED (run npm install multer)'}`);
   console.log(`[JMK] Email mode:     ${email.MODE}`);
   console.log(`[JMK] Payment mode:   ${payments.MODE}`);
 });

@@ -1,7 +1,7 @@
 {
   "name": "jmk-server",
-  "version": "1.1.0",
-  "description": "JMK · backend (Express + SQLite + WebSockets) — vacation navigator for Greek hotels",
+  "version": "1.2.0",
+  "description": "JMK · backend (Express + SQLite + WebSockets + Uploads + Calendar) — vacation navigator for Greek hotels",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,10 +17,12 @@
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
+    "cloudinary": "^2.5.0",
     "stripe": "^17.0.0",
     "pg": "^8.13.0"
   }

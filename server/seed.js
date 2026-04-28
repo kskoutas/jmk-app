@@ -129,3 +129,162 @@ module.exports = {
     autoCancelBadWeather: true
   }
 };
+
+// ============================================================
+//  v1.2 — Airbnb-style activity enrichment
+//  Προσθέτει photos[], schedule, pricing, includes, languages,
+//  cancellationPolicy, rules σε κάθε activity (αν λείπουν).
+//  Έτσι τα παλιά seed records αυτόματα αναβαθμίζονται.
+// ============================================================
+
+// Sample royalty-free photo URLs ανά κατηγορία (Unsplash CDN — δωρεάν).
+// Σε production, ο partner ανεβάζει δικά του.
+const SAMPLE_PHOTOS = {
+  boat: [
+    'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1200',
+    'https://images.unsplash.com/photo-1502209524164-acea936639a2?w=1200',
+    'https://images.unsplash.com/photo-1589974357252-4cf3a07ce0ce?w=1200',
+    'https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=1200'
+  ],
+  sunset: [
+    'https://images.unsplash.com/photo-1507181486029-fbed14ec1bb4?w=1200',
+    'https://images.unsplash.com/photo-1566053609063-f5cffe8d6e57?w=1200',
+    'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=1200'
+  ],
+  snorkel: [
+    'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200',
+    'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200',
+    'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=1200'
+  ],
+  food: [
+    'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200',
+    'https://images.unsplash.com/photo-1555992336-fb0d29498b13?w=1200',
+    'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200'
+  ],
+  wine: [
+    'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1200',
+    'https://images.unsplash.com/photo-1474722883778-792e7990302f?w=1200',
+    'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1200'
+  ],
+  hike: [
+    'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200',
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200',
+    'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1200'
+  ],
+  workshop: [
+    'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200',
+    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200',
+    'https://images.unsplash.com/photo-1551404973-761c83cd8339?w=1200'
+  ],
+  rental: [
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200',
+    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1200',
+    'https://images.unsplash.com/photo-1591293836027-e05b48473b67?w=1200'
+  ],
+  tour: [
+    'https://images.unsplash.com/photo-1503152394-c571994fd383?w=1200',
+    'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1200',
+    'https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?w=1200'
+  ],
+  culture: [
+    'https://images.unsplash.com/photo-1503152394-c571994fd383?w=1200',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200'
+  ]
+};
+
+const DEFAULT_SCHEDULES = {
+  boat:    { weekly:[1,1,1,1,1,1,1], slots:[{time:'09:00',cap:8,label:'Morning'},{time:'14:00',cap:6,label:'Afternoon'}], minHrs:24, maxDays:120, season:['2026-05-01','2026-10-15'] },
+  sunset:  { weekly:[1,1,1,1,1,1,1], slots:[{time:'19:00',cap:8,label:'Sunset'}], minHrs:12, maxDays:60, season:['2026-04-01','2026-10-31'] },
+  snorkel: { weekly:[1,1,1,1,1,1,0], slots:[{time:'10:00',cap:6,label:'Half-day'}], minHrs:24, maxDays:90, season:['2026-05-15','2026-09-30'] },
+  food:    { weekly:[0,1,1,1,1,1,1], slots:[{time:'13:00',cap:30,label:'Lunch'},{time:'19:30',cap:30,label:'Dinner'}], minHrs:6, maxDays:60 },
+  wine:    { weekly:[1,1,1,1,1,1,0], slots:[{time:'12:00',cap:16,label:'Noon'},{time:'17:00',cap:16,label:'Afternoon'}], minHrs:12, maxDays:90 },
+  hike:    { weekly:[1,1,0,1,1,1,1], slots:[{time:'07:00',cap:12,label:'Early start'}], minHrs:24, maxDays:90, season:['2026-04-01','2026-10-31'] },
+  workshop:{ weekly:[0,1,1,1,1,1,1], slots:[{time:'10:00',cap:8,label:'Morning'},{time:'17:00',cap:8,label:'Evening'}], minHrs:24, maxDays:60 },
+  rental:  { weekly:[1,1,1,1,1,1,1], slots:[{time:'09:00',cap:5,label:'24h rental'}], minHrs:6, maxDays:120 },
+  tour:    { weekly:[1,1,1,1,1,1,1], slots:[{time:'09:30',cap:15,label:'Morning'},{time:'15:00',cap:15,label:'Afternoon'}], minHrs:12, maxDays:90 },
+  culture: { weekly:[1,1,1,1,1,1,0], slots:[{time:'10:00',cap:20,label:'Morning'}], minHrs:12, maxDays:60 }
+};
+
+const INCLUDES_BY_CATEGORY = {
+  boat:    ['🍽 Γεύμα','🤿 Snorkel εξοπλισμός','🚖 Transfer','🥤 Νερό','🧴 Αντηλιακό'],
+  sunset:  ['🍾 Σαμπάνια','🥨 Snacks','📸 Φωτογραφίες'],
+  snorkel: ['🤿 Εξοπλισμός','🥪 Brunch','🚖 Transfer'],
+  food:    ['🍽 Πλήρες γεύμα','🍷 Κρασί','🥖 Ψωμί'],
+  wine:    ['🍷 5 κρασιά','🧀 Τυριά','🥨 Παξιμάδια','📜 Σερτιφικάτο'],
+  hike:    ['🎒 Backpack','💧 Νερό','🍫 Snacks','📍 Οδηγός'],
+  workshop:['🥖 Όλα τα υλικά','📜 Συνταγές','🍽 Γεύμα'],
+  rental:  ['🪖 Κράνος','🛡 Ασφάλιση','⛽ Καύσιμα starter'],
+  tour:    ['📍 Οδηγός','🎫 Εισιτήρια','🚌 Transfer'],
+  culture: ['📍 Οδηγός','🎫 Εισιτήρια','🎧 Audio guide']
+};
+
+const RULES_DEFAULT = [
+  '🚫 Όχι κατοικίδια',
+  '🚭 Όχι κάπνισμα',
+  '🌱 Σεβασμός στο περιβάλλον'
+];
+
+const CANCELLATION_POLICIES = {
+  flexible:  { name:'Ευέλικτη',   refundUntilHours: 24, summary:'100% επιστροφή έως 24h πριν' },
+  moderate:  { name:'Μέτρια',     refundUntilHours: 48, summary:'100% έως 48h, 50% έως 24h' },
+  strict:    { name:'Αυστηρή',    refundUntilHours: 168, summary:'100% επιστροφή μόνο >7 μέρες πριν' }
+};
+
+function defaultPhotosFor(category) {
+  return (SAMPLE_PHOTOS[category] || SAMPLE_PHOTOS.tour || []).map((url, i) => ({
+    id:       `ph-${category}-${i}`,
+    url,
+    thumbUrl: url.replace('w=1200', 'w=400'),
+    width:    1200,
+    height:   800,
+    order:    i,
+    isCover:  i === 0,
+    provider: 'unsplash'
+  }));
+}
+
+function defaultScheduleFor(category) {
+  const cfg = DEFAULT_SCHEDULES[category] || DEFAULT_SCHEDULES.tour;
+  return {
+    weekly: cfg.weekly,
+    timeSlots: cfg.slots.map((s, i) => ({
+      id:          `ts-${category}-${i}`,
+      time:        s.time,
+      durationMin: s.dur || 180,
+      capacity:    s.cap,
+      label:       s.label
+    })),
+    blockedDates:    [],
+    openDates:       [],
+    minAdvanceHours: cfg.minHrs || 12,
+    maxAdvanceDays:  cfg.maxDays || 90,
+    seasonStart:     cfg.season ? cfg.season[0] : null,
+    seasonEnd:       cfg.season ? cfg.season[1] : null
+  };
+}
+
+// Enrich activities
+module.exports.activities.forEach(a => {
+  if (!a.photos)             a.photos = defaultPhotosFor(a.category);
+  if (!a.schedule)           a.schedule = defaultScheduleFor(a.category);
+  if (!a.pricing) {
+    a.pricing = {
+      base:     a.price,
+      unit:     'person',
+      currency: 'EUR',
+      highSeason: { start: '2026-07-01', end: '2026-08-31', multiplier: 1.20 },
+      weekend:    { multiplier: 1.10, days: [5, 6] },
+      lastMinute: { hoursBefore: 24, multiplier: 0.85 },
+      groupDiscounts: a.maxPeople >= 6 ? [{ minPeople: 6, multiplier: 0.95 }] : []
+    };
+  }
+  if (!a.includes)           a.includes = INCLUDES_BY_CATEGORY[a.category] || [];
+  if (!a.excludes)           a.excludes = ['🛂 Ασφάλιση ταξιδιωτών','💸 Φιλοδωρήματα'];
+  if (!a.languages)          a.languages = ['el','en'];
+  if (!a.cancellationPolicy) a.cancellationPolicy = a.category === 'rental' ? 'strict' : 'moderate';
+  if (!a.rules)              a.rules = RULES_DEFAULT;
+  if (!a.minAge)             a.minAge = (a.category === 'hike' || a.category === 'rental') ? 12 : 0;
+});
+
+module.exports.cancellationPolicies = CANCELLATION_POLICIES;
+
