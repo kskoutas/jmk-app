@@ -1,11 +1,13 @@
 {
   "name": "jmk-server",
-  "version": "1.0.0",
-  "description": "JMK · shared backend (Express + SQLite)",
+  "version": "1.1.0",
+  "description": "JMK · backend (Express + SQLite + WebSockets) — vacation navigator for Greek hotels",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "bash tests/e2e.sh",
+    "migrate:postgres": "node postgres/migrate.js"
   },
   "engines": {
     "node": ">=22"
@@ -14,6 +16,12 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "stripe": "^17.0.0",
+    "pg": "^8.13.0"
   }
 }

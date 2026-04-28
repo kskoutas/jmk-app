@@ -1,0 +1,17 @@
+# Dependencies — εγκαθίστανται με npm install, δεν μπαίνουν στο git
+node_modules/
+
+# Database files
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Logs & temp
+*.log
+.DS_Store
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
