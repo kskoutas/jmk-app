@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<title>JMK · Demo Center</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --accent:#0F4C5C; --accent2:#5F8A8B; --accent-bg:#E8F1F2;
+    --gold:#C49A6C; --gold-bg:#FBF1E5;
+    --bg:#F7F9FA; --ink:#1A1A1A; --muted:#6B7B82; --border:#E1E7EA;
+    --green:#2E7D32; --shadow-lg:0 18px 50px rgba(15,76,92,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#F4F6F8;color:var(--ink);min-height:100vh}
+  a{text-decoration:none;color:inherit}
+
+  .hero{background:linear-gradient(135deg,#0F4C5C 0%,#5F8A8B 60%,#C49A6C 100%);color:#fff;padding:60px 24px 80px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-100px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);border-radius:50%}
+  .hero::after{content:"";position:absolute;bottom:-60px;left:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%);border-radius:50%}
+  .brand{display:inline-flex;align-items:center;gap:12px;margin-bottom:24px;position:relative}
+  .brand-mark{width:56px;height:56px;background:#fff;color:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;letter-spacing:-.5px}
+  .brand-name{font-size:32px;font-weight:800;letter-spacing:-.5px}
+  h1{font-size:46px;font-weight:800;letter-spacing:-1px;margin:10px 0 12px;line-height:1.1;position:relative}
+  .sub{font-size:18px;opacity:.92;max-width:680px;margin:0 auto 18px;line-height:1.5;position:relative}
+  .tag{display:inline-block;padding:6px 14px;background:rgba(255,255,255,.18);border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:18px;position:relative}
+
+  .container{max-width:1280px;margin:-50px auto 0;padding:0 24px 60px;position:relative;z-index:5}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  @media(max-width:1200px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.grid{grid-template-columns:1fr};h1{font-size:30px}.hero{padding:40px 18px 70px}.sub{font-size:16px}}
+
+  .role-card .badge.admin{background:#FCE9E5;color:#9A2A1B}
+  .role-card .cta.dark{background:#0F1A1F}
+
+  .demo-bar{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin:24px 0;box-shadow:0 4px 14px rgba(0,0,0,.05);flex-wrap:wrap}
+  .demo-bar .lbl{font-size:13px;font-weight:700;color:var(--accent)}
+  .demo-bar .info{font-size:12px;color:var(--muted);flex:1;min-width:200px}
+  .demo-bar .btn{padding:8px 14px;font-size:12.5px;font-weight:700;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer}
+  .demo-bar .btn:hover{background:var(--accent-bg)}
+  .demo-bar .btn.danger{color:#9A2A1B;border-color:#F1C7C0}
+  .demo-bar .btn.danger:hover{background:#FCEEEC}
+
+  .role-card{background:#fff;border-radius:20px;padding:28px 26px;box-shadow:0 8px 24px rgba(0,0,0,.07);transition:all .25s;position:relative;overflow:hidden;border:2px solid transparent}
+  .role-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:var(--accent)}
+  .role-card .ico{font-size:48px;margin-bottom:14px;line-height:1}
+  .role-card .badge{position:absolute;top:18px;right:18px;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px}
+  .role-card .badge.guest{background:var(--gold-bg);color:var(--gold)}
+  .role-card .badge.hotelier{background:var(--accent-bg);color:var(--accent)}
+  .role-card .badge.partner{background:#E5F4E5;color:var(--green)}
+  .role-card h2{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.4px}
+  .role-card .desc{font-size:14px;color:var(--muted);line-height:1.5;margin:0 0 18px}
+  .role-card ul{margin:0 0 22px;padding:0;list-style:none}
+  .role-card li{font-size:13px;color:var(--ink);padding:6px 0;display:flex;align-items:flex-start;gap:8px}
+  .role-card li::before{content:"✓";color:var(--green);font-weight:800;flex-shrink:0}
+  .role-card .cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:var(--accent);color:#fff;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;text-decoration:none;transition:opacity .15s}
+  .role-card .cta:hover{opacity:.9}
+  .role-card .cta.gold{background:var(--gold)}
+  .role-card .cta.green{background:var(--green)}
+
+  .docs{margin-top:40px;background:#fff;border-radius:20px;padding:32px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+  .docs h2{font-size:22px;font-weight:800;margin:0 0 20px;letter-spacing:-.3px}
+  .doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .doc-row{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .15s;background:#fff;text-decoration:none;color:var(--ink)}
+  .doc-row:hover{border-color:var(--accent);background:var(--accent-bg)}
+  .doc-row .doc-ico{width:48px;height:48px;border-radius:10px;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;font-weight:800}
+  .doc-row .doc-ico.docx{background:#E3EFFD;color:#1A4D9A}
+  .doc-row .doc-ico.html{background:var(--gold-bg);color:var(--gold)}
+  .doc-row .info b{display:block;font-size:14px;font-weight:700;margin-bottom:2px}
+  .doc-row .info span{font-size:12px;color:var(--muted)}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:32px;background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+  .stat-cell{padding:6px;border-right:1px solid var(--border)}
+  .stat-cell:last-child{border-right:none}
+  .stat-cell .v{font-size:26px;font-weight:800;color:var(--accent);letter-spacing:-.5px}
+  .stat-cell .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:2px}
+  @media(max-width:680px){.stat-cell{border-right:none;border-bottom:1px solid var(--border);padding:10px}.stat-cell:last-child{border-bottom:none}}
+
+  footer{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+  footer a{color:var(--accent);font-weight:700}
+
+  .flow-section{background:#fff;border-radius:20px;padding:32px;box-shadow:0 4px 14px rgba(0,0,0,.05);margin-top:30px}
+  .flow-section h2{font-size:22px;font-weight:800;margin:0 0 8px;letter-spacing:-.3px}
+  .flow-section p{font-size:14px;color:var(--muted);margin:0 0 24px;line-height:1.5}
+  .flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .flow-step{padding:18px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,#fff,#fafbfc)}
+  .flow-step .num{width:32px;height:32px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;margin-bottom:10px}
+  .flow-step b{display:block;font-size:14px;margin-bottom:4px}
+  .flow-step span{font-size:12px;color:var(--muted);line-height:1.45}
+
+  .anchor-nav{position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:18px;font-size:13px;font-weight:600;z-index:50;overflow-x:auto;white-space:nowrap}
+  .anchor-nav a{color:var(--muted);transition:color .15s}
+  .anchor-nav a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="anchor-nav">
+  <a href="#apps">📱 Apps</a>
+  <a href="#flow">🔄 User flow</a>
+  <a href="#docs">📚 Documents</a>
+  <a href="#stats">📊 Snapshot</a>
+</div>
+
+<div class="hero">
+  <div class="brand">
+    <div class="brand-mark">J</div>
+    <div class="brand-name">JMK</div>
+  </div>
+  <div class="tag">Demo Center · v1.0</div>
+  <h1>Ο ψηφιακός πλοηγός<br>για ελληνικά ξενοδοχεία.</h1>
+  <p class="sub">Τρεις εμπειρίες, μία πλατφόρμα: επισκέπτες σχεδιάζουν τις διακοπές τους, ξενοδόχοι κερδίζουν προμήθεια από κάθε δραστηριότητα, τοπικοί συνεργάτες πουλάνε χωρίς μεσάζοντες.</p>
+</div>
+
+<div class="container">
+
+  <div class="demo-bar">
+    <span class="lbl">🔗 Live demo</span>
+    <span class="info">Όλες οι εφαρμογές μοιράζονται κοινά δεδομένα μέσω localStorage. Ότι αλλάξεις σε μια εμφανίζεται και στις άλλες.</span>
+    <button class="btn" onclick="openInNewTab()">↗ Άνοιξε όλα σε νέες καρτέλες</button>
+    <button class="btn danger" onclick="resetAll()">↻ Reset demo data</button>
+  </div>
+
+  <div id="apps" class="grid">
+    <!-- GUEST -->
+    <div class="role-card">
+      <span class="badge guest">PWA · Mobile</span>
+      <div class="ico">🧳</div>
+      <h2>Επισκέπτης</h2>
+      <p class="desc">Ο τουρίστας σκανάρει το QR στο δωμάτιο και ανοίγει την εφαρμογή χωρίς εγκατάσταση.</p>
+      <ul>
+        <li>QR landing &amp; onboarding 60sec</li>
+        <li>3 ημερήσια πλάνα × 6 μέρες</li>
+        <li>5νθήμερη πρόβλεψη καιρού</li>
+        <li>In-app chat με anti-bypass</li>
+        <li>Stripe checkout &amp; QR check-in</li>
+      </ul>
+      <a class="cta gold" href="JMK_Guest_App.html">▶ Δοκίμασε την εμπειρία →</a>
+    </div>
+
+    <!-- HOTELIER -->
+    <div class="role-card">
+      <span class="badge hotelier">Web · Dashboard</span>
+      <div class="ico">🏨</div>
+      <h2>Ξενοδόχος</h2>
+      <p class="desc">Web dashboard που τρέχει σε browser ή tablet. Παρακολουθεί έσοδα, κρατήσεις και συνεργάτες.</p>
+      <ul>
+        <li>KPIs &amp; trend ανά εβδομάδα</li>
+        <li>Κρατήσεις &amp; ανάλυση κατηγοριών</li>
+        <li>Έγκριση συνεργατών &amp; reviews</li>
+        <li>QR του ξενοδοχείου (PDF/PNG)</li>
+        <li>Εκκαθαρίσεις 1η &amp; 15η</li>
+      </ul>
+      <a class="cta" href="JMK_Hotelier_App.html">▶ Δες το dashboard →</a>
+    </div>
+
+    <!-- PARTNER -->
+    <div class="role-card">
+      <span class="badge partner">App · Mobile</span>
+      <div class="ico">⛵</div>
+      <h2>Συνεργάτης</h2>
+      <p class="desc">Καπετάνιοι, εστιάτορες, ξεναγοί διαχειρίζονται τα listings τους από κινητό.</p>
+      <ul>
+        <li>Upload δραστηριότητας 4 βήματα</li>
+        <li>Calendar &amp; live ειδοποιήσεις</li>
+        <li>Chat με guests · 3 unread</li>
+        <li>QR scan @ check-in</li>
+        <li>Έσοδα &amp; auto-release 24h</li>
+      </ul>
+      <a class="cta green" href="JMK_Partner_App.html">▶ Άνοιξε το partner app →</a>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="role-card">
+      <span class="badge admin">Admin · Web</span>
+      <div class="ico">🛠️</div>
+      <h2>Admin (εσύ)</h2>
+      <p class="desc">Διαχειριστικό panel για όλη την πλατφόρμα: νησιά, κατηγορίες, εγκρίσεις, πληρωμές.</p>
+      <ul>
+        <li>Επιτρεπόμενες κατηγορίες ανά νησί</li>
+        <li>Εγκρίσεις KYC συνεργατών</li>
+        <li>Moderation δραστηριοτήτων</li>
+        <li>Anti-bypass alerts &amp; bans</li>
+        <li>Commissions &amp; payouts control</li>
+      </ul>
+      <a class="cta dark" href="JMK_Admin_App.html">▶ Άνοιξε το Admin →</a>
+    </div>
+  </div>
+
+  <!-- USER FLOW -->
+  <div id="flow" class="flow-section">
+    <h2>🔄 Πώς δουλεύει ένα booking €220</h2>
+    <p>Από το QR scan μέχρι την εκκαθάριση πληρωμής — ένα πλήρες παράδειγμα από την πλατφόρμα.</p>
+    <div class="flow">
+      <div class="flow-step"><div class="num">1</div><b>QR scan</b><span>Maria σκανάρει το QR στο δωμάτιο της Naxos Boutique. Ανοίγει το PWA χωρίς app store.</span></div>
+      <div class="flow-step"><div class="num">2</div><b>Onboarding 60s</b><span>Δηλώνει: ζευγάρι, 26-35, αγαπά θάλασσα + φαγητό, budget €€. Επιλέγει 6 ημέρες.</span></div>
+      <div class="flow-step"><div class="num">3</div><b>18 πλάνα</b><span>Plan engine συνδυάζει τοπική γνώση + 5νθήμερη πρόβλεψη + ratings συνεργατών.</span></div>
+      <div class="flow-step"><div class="num">4</div><b>Chat με Captain</b><span>Διαλέγει Day Cruise → ανοίγει chat με Captain Niko. Συμφωνία €220.</span></div>
+      <div class="flow-step"><div class="num">5</div><b>Anti-bypass</b><span>Engine κρύβει τηλέφωνα/emails ώστε η συμφωνία να κλείσει μέσα από JMK.</span></div>
+      <div class="flow-step"><div class="num">6</div><b>Πληρωμή Stripe</b><span>€220 χρεώνεται από Visa. Στιγμιαία επιβεβαίωση. JMK κρατάει escrow.</span></div>
+      <div class="flow-step"><div class="num">7</div><b>QR check-in</b><span>Captain σκανάρει το QR της Maria στο λιμάνι. Booking κλειδώνει.</span></div>
+      <div class="flow-step"><div class="num">8</div><b>Auto-release</b><span>24h μετά: €176 → Captain · €10 → Hotel · €30 → JMK · €4 → Stripe.</span></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats" class="stats-row">
+    <div class="stat-cell"><div class="v">14</div><div class="l">Ξενοδοχεία beta</div></div>
+    <div class="stat-cell"><div class="v">87</div><div class="l">Συνεργάτες</div></div>
+    <div class="stat-cell"><div class="v">€21.4K</div><div class="l">GMV YTD</div></div>
+    <div class="stat-cell"><div class="v">+62</div><div class="l">NPS Επισκεπτών</div></div>
+    <div class="stat-cell"><div class="v">4.7★</div><div class="l">Avg rating</div></div>
+    <div class="stat-cell"><div class="v">61%</div><div class="l">QR activation</div></div>
+  </div>
+
+  <!-- DOCS -->
+  <div id="docs" class="docs">
+    <h2>📚 Documents &amp; Research</h2>
+    <div class="doc-grid">
+      <a class="doc-row" href="JMK_Business_Plan.docx" download>
+        <div class="doc-ico docx">📄</div>
+        <div class="info"><b>Business Plan (EL)</b><span>P&amp;L 3-year · go-to-market · μοντέλο</span></div>
+      </a>
+      <a class="doc-row" href="JMK_Technical_Specifications.docx" download>
+        <div class="doc-ico docx">⚙</div>
+        <div class="info"><b>Τεχνικές Προδιαγραφές</b><span>Architecture · APIs · DB schema</span></div>
+      </a>
+      <a class="doc-row" href="JMK_Executive_Summary.docx" download>
+        <div class="doc-ico docx">📋</div>
+        <div class="info"><b>Executive Summary</b><span>1-pager για επενδυτές</span></div>
+      </a>
+      <a class="doc-row" href="JMK_UI_Mockups.html">
+        <div class="doc-ico html">🎨</div>
+        <div class="info"><b>UI Mockups</b><span>3 personas · 12 screens · static</span></div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  JMK · Made in Greece 🇬🇷 · <a href="JMK_UI_Mockups.html">View original mockups</a>
+</footer>
+
+<script src="jmk_config.js"></script>
+<script src="jmk_store.js"></script>
+<script src="jmk_api.js"></script>
+<script>
+function resetAll(){
+  if(!confirm('Επαναφορά όλων των δεδομένων demo σε αρχική κατάσταση;')) return;
+  try { JMK.reset(); alert('Έγινε επαναφορά. Άνοιξε ξανά τις εφαρμογές για να δεις τα default δεδομένα.'); }
+  catch(e){ localStorage.removeItem('jmk_state_v1'); localStorage.removeItem('jmk_session_v1'); alert('Reset OK'); }
+}
+function openInNewTab(){
+  ['JMK_Guest_App.html','JMK_Hotelier_App.html','JMK_Partner_App.html','JMK_Admin_App.html']
+    .forEach(function(u,i){ setTimeout(function(){ window.open(u,'_blank') }, i*150) });
+}
+// quick stats hookup if store has data
+document.addEventListener('DOMContentLoaded', function(){
+  if(typeof JMK==='undefined') return;
+  var $$ = function(s){return document.querySelectorAll(s)};
+  var cells = $$('.stat-cell .v');
+  if(cells.length>=4){
+    cells[0].textContent = JMK.get('hotels').length;
+    cells[1].textContent = JMK.get('partners').length;
+    var gmv = JMK.get('bookings').reduce(function(a,b){return a+(b.total||0)},0);
+    cells[2].textContent = '€'+(gmv>=1000?(gmv/1000).toFixed(1)+'K':gmv);
+  }
+});
+</script>
+
+</body>
+</html>

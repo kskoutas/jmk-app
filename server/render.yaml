@@ -1,0 +1,23 @@
+# Render.com blueprint — one-click deploy.
+# Sign up at render.com, click "New > Blueprint", point at the repo containing
+# this folder, and Render reads this file automatically.
+services:
+  - type: web
+    name: jmk-server
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_PATH
+        value: /var/data/jmk.sqlite
+    disk:
+      name: jmk-data
+      mountPath: /var/data
+      sizeGB: 1

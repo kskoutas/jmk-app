@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<title>JMK · Ξενοδόχος</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --accent:#0F4C5C;--accent2:#5F8A8B;--accent-bg:#E8F1F2;--gold:#C49A6C;
+    --bg:#F4F6F8;--card:#fff;--ink:#1A1A1A;--muted:#6B7B82;--border:#E1E7EA;
+    --green:#2E7D32;--red:#B23A3A;--warn:#D9842F;--success-bg:#E5F4E5;
+    --shadow:0 4px 18px rgba(0,0,0,.06);--shadow-lg:0 12px 36px rgba(15,76,92,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  button{font-family:inherit}
+  input,textarea,select{font-family:inherit}
+  a{color:var(--accent);text-decoration:none}
+
+  /* ===== AUTH SCREENS ===== */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#0F4C5C 0%,#5F8A8B 60%,#C49A6C 100%)}
+  .auth-card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.22)}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .brand-mark{width:44px;height:44px;background:var(--accent);color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:-.5px}
+  .brand-name{font-size:24px;font-weight:800;color:var(--accent);letter-spacing:-.5px}
+  .auth-title{font-size:24px;font-weight:700;margin:24px 0 6px}
+  .auth-sub{color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.5}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+  .field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:#fff;transition:border-color .15s}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+  .field-error{color:var(--red);font-size:12px;margin-top:4px;display:none}
+  .field.error input,.field.error select{border-color:var(--red)}
+  .field.error .field-error{display:block}
+  .field-hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:8px 0 16px}
+  .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;padding:14px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;transition:opacity .15s}
+  .btn-primary:hover{opacity:.92}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn-secondary{width:100%;background:#fff;color:var(--accent);border:1.5px solid var(--accent);padding:13px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;margin-top:8px}
+  .auth-foot{text-align:center;font-size:13px;color:var(--muted);margin-top:18px}
+  .auth-foot a{font-weight:600;cursor:pointer}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px;margin:18px 0;text-transform:uppercase;letter-spacing:.6px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+
+  /* Stepper */
+  .stepper{display:flex;align-items:center;gap:6px;margin-bottom:24px}
+  .step{flex:1;height:4px;border-radius:2px;background:var(--border)}
+  .step.active{background:var(--accent)}
+  .step.done{background:var(--green)}
+  .step-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+
+  /* ===== APP SHELL ===== */
+  .app{display:none;min-height:100vh}
+  .app.active{display:flex}
+  .sidebar{width:240px;background:var(--accent);color:#fff;padding:24px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .sidebar .brand{margin-bottom:30px;padding:0 6px}
+  .sidebar .brand-name{color:#fff}
+  .sidebar .brand-mark{background:var(--gold);color:#fff}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;font-size:14px;color:rgba(255,255,255,.78);cursor:pointer;font-weight:500;margin-bottom:2px;transition:all .15s}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,.14);color:#fff;font-weight:600}
+  .nav-item .icon{width:18px;text-align:center}
+  .nav-spacer{flex:1}
+  .user-card{background:rgba(255,255,255,.08);padding:12px;border-radius:12px;display:flex;align-items:center;gap:10px;margin-top:14px}
+  .avatar{width:36px;height:36px;background:var(--gold);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+  .user-meta{font-size:12px;line-height:1.3;flex:1;min-width:0}
+  .user-meta b{display:block;color:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-meta span{color:rgba(255,255,255,.6)}
+
+  .main{flex:1;padding:28px 32px;max-width:100%}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+  .topbar h1{margin:0;font-size:26px;font-weight:700}
+  .topbar .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .month-pill{background:#fff;border:1px solid var(--border);padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px}
+  .stat-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
+  .stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+  .stat-card.gold::before{background:var(--gold)}
+  .stat-card.green::before{background:var(--green)}
+  .stat-card.warn::before{background:var(--warn)}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px}
+  .stat-value{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+  .stat-delta{font-size:12px;color:var(--green);margin-top:4px;font-weight:600;display:flex;align-items:center;gap:4px}
+  .stat-delta.down{color:var(--red)}
+
+  .grid2{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
+  @media (max-width:980px){.grid2{grid-template-columns:1fr}}
+
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .card-h h3{margin:0;font-size:15px;font-weight:700}
+  .card-h .link{font-size:12px;color:var(--accent);font-weight:600;cursor:pointer}
+
+  /* Chart bars */
+  .chart{height:180px;display:flex;align-items:flex-end;gap:8px;padding:10px 4px 0;position:relative}
+  .chart-bar{flex:1;background:linear-gradient(to top,var(--accent) 0%,var(--accent2) 100%);border-radius:6px 6px 0 0;position:relative;min-height:8px;cursor:pointer;transition:opacity .15s}
+  .chart-bar:hover{opacity:.85}
+  .chart-bar.gold{background:linear-gradient(to top,var(--gold) 0%,#E2BD96 100%)}
+  .chart-bar .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;font-weight:600}
+  .chart-bar:hover .tip{opacity:1}
+  .chart-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;padding:0 4px}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:10px;border-bottom:1px solid var(--border)}
+  td{padding:12px;border-bottom:1px solid var(--border)}
+  tbody tr:hover{background:#fafbfc}
+  tbody tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent-bg);color:var(--accent)}
+  .pill.green{background:var(--success-bg);color:var(--green)}
+  .pill.warn{background:#FBEDD9;color:var(--warn)}
+  .pill.red{background:#F8E0E0;color:var(--red)}
+  .pill.gold{background:#FBF1E5;color:var(--gold)}
+
+  /* Tabs */
+  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;gap:6px;overflow-x:auto}
+  .tab{padding:10px 16px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* Pages */
+  .page{display:none}
+  .page.active{display:block}
+
+  /* QR */
+  .qr-block{background:#fff;border:1px solid var(--border);border-radius:14px;padding:22px;text-align:center;box-shadow:var(--shadow)}
+  .qr-svg{width:200px;height:200px;margin:14px auto;display:block;background:#fff;padding:10px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+  .qr-url{font-family:Consolas,Monaco,monospace;font-size:13px;background:var(--accent-bg);padding:8px 14px;border-radius:8px;display:inline-block;color:var(--accent);font-weight:600}
+
+  /* Toast */
+  .toast{position:fixed;top:20px;right:20px;background:var(--accent);color:#fff;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);z-index:999;transform:translateX(120%);transition:transform .3s}
+  .toast.show{transform:translateX(0)}
+  .toast.success{background:var(--green)}
+  .toast.error{background:var(--red)}
+
+  /* Modal */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:18px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto}
+  .modal h3{margin:0 0 8px;font-size:20px}
+  .modal-close{float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin:-4px -4px 0 0}
+
+  /* Empty state */
+  .empty{text-align:center;padding:40px 20px;color:var(--muted)}
+  .empty-ico{font-size:42px;margin-bottom:10px;opacity:.5}
+
+  /* Settings rows */
+  .setting-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+  .setting-row:last-child{border-bottom:none}
+  .setting-label{font-weight:600;font-size:14px}
+  .setting-desc{font-size:12px;color:var(--muted);margin-top:2px}
+
+  .toggle{position:relative;width:44px;height:24px;background:var(--border);border-radius:12px;cursor:pointer;transition:background .2s}
+  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+  .toggle.on{background:var(--accent)}
+  .toggle.on::after{left:22px}
+
+  /* Mobile sidebar */
+  .menu-btn{display:none;background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px}
+  @media (max-width:880px){
+    .sidebar{position:fixed;left:-260px;z-index:50;transition:left .3s}
+    .sidebar.open{left:0}
+    .menu-btn{display:block}
+    .main{padding:16px}
+    .topbar h1{font-size:20px}
+    .stat-value{font-size:24px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== AUTH (LOGIN) ============== -->
+<div id="screen-login" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-mark">J</div><div class="brand-name">JMK</div></div>
+    <h2 class="auth-title">Καλωσήρθες πίσω</h2>
+    <p class="auth-sub">Συνδέσου στον λογαριασμό ξενοδοχείου σου για να δεις κρατήσεις, έσοδα και διαχείριση συνεργατών.</p>
+    <form id="loginForm" onsubmit="return doLogin(event)">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="info@xenodoxeio.gr" required value="info@naxosboutique.gr">
+      </div>
+      <div class="field">
+        <label>Κωδικός</label>
+        <input type="password" id="loginPwd" placeholder="••••••••" required value="demo1234">
+        <div class="field-hint"><a onclick="toast('Στάλθηκε link επαναφοράς στο email σου','success')">Ξέχασες τον κωδικό;</a></div>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="rememberMe" checked>
+        <label for="rememberMe">Να με θυμάσαι σε αυτή τη συσκευή</label>
+      </div>
+      <button class="btn-primary" type="submit">Σύνδεση</button>
+    </form>
+    <div class="divider">ή</div>
+    <button class="btn-secondary" onclick="show('screen-signup1')">Νέος ξενοδόχος; Δημιούργησε λογαριασμό</button>
+    <div class="auth-foot">Πρόβλημα; <a onclick="toast('Επικοινώνησε στο support@jmk.app','success')">Επικοινώνησε με το support</a></div>
+  </div>
+</div>
+
+<!-- ============== SIGNUP STEP 1 ============== -->
+<div id="screen-signup1" class="auth-wrap" style="display:none">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-mark">J</div><div class="brand-name">JMK</div></div>
+    <div class="step-label" style="margin-top:18px">Εγγραφή Ξενοδόχου · 1 / 3</div>
+    <div class="stepper"><div class="step active"></div><div class="step"></div><div class="step"></div></div>
+    <h2 class="auth-title">Στοιχεία επικοινωνίας</h2>
+    <p class="auth-sub">Ας ξεκινήσουμε με τα βασικά. Όλα τα στοιχεία είναι εμπιστευτικά.</p>
+    <form onsubmit="return signupStep1(event)">
+      <div class="row2">
+        <div class="field">
+          <label>Όνομα</label>
+          <input type="text" id="suFirstname" required placeholder="Γιάννης">
+        </div>
+        <div class="field">
+          <label>Επώνυμο</label>
+          <input type="text" id="suLastname" required placeholder="Παπαδόπουλος">
+        </div>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="suEmail" required placeholder="info@ξενοδοχείο.gr">
+      </div>
+      <div class="field">
+        <label>Κινητό</label>
+        <input type="tel" id="suPhone" required placeholder="+30 6XX XXX XXXX">
+        <div class="field-hint">Θα σταλεί κωδικός επιβεβαίωσης μέσω SMS</div>
+      </div>
+      <div class="field">
+        <label>Κωδικός</label>
+        <input type="password" id="suPwd" required minlength="8" placeholder="τουλάχιστον 8 χαρακτήρες">
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="suTerms" required>
+        <label for="suTerms">Συμφωνώ με τους <a onclick="toast('Άνοιξε σε νέα καρτέλα','success')">Όρους Χρήσης</a> και την <a onclick="toast('Άνοιξε σε νέα καρτέλα','success')">Πολιτική Προστασίας</a></label>
+      </div>
+      <button class="btn-primary" type="submit">Συνέχεια →</button>
+    </form>
+    <div class="auth-foot">Έχεις λογαριασμό; <a onclick="show('screen-login')">Σύνδεση</a></div>
+  </div>
+</div>
+
+<!-- ============== SIGNUP STEP 2: HOTEL INFO ============== -->
+<div id="screen-signup2" class="auth-wrap" style="display:none">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-mark">J</div><div class="brand-name">JMK</div></div>
+    <div class="step-label" style="margin-top:18px">Εγγραφή Ξενοδόχου · 2 / 3</div>
+    <div class="stepper"><div class="step done"></div><div class="step active"></div><div class="step"></div></div>
+    <h2 class="auth-title">Στοιχεία ξενοδοχείου</h2>
+    <p class="auth-sub">Πες μας για το κατάλυμά σου ώστε να εξατομικεύσουμε τις προτάσεις του JMK.</p>
+    <form onsubmit="return signupStep2(event)">
+      <div class="field">
+        <label>Επωνυμία ξενοδοχείου</label>
+        <input type="text" id="hName" required placeholder="Naxos Boutique Hotel">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Νησί / Πόλη</label>
+          <select id="hLocation" required>
+            <option value="">— Επίλεξε —</option>
+            <option>Νάξος</option><option>Σαντορίνη</option><option>Πάρος</option>
+            <option>Μύκονος</option><option>Κρήτη</option><option>Ρόδος</option>
+            <option>Κέρκυρα</option><option>Αθήνα</option><option>Θεσσαλονίκη</option>
+            <option>Άλλο</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Δωμάτια</label>
+          <input type="number" id="hRooms" required min="1" placeholder="14">
+        </div>
+      </div>
+      <div class="field">
+        <label>Διεύθυνση</label>
+        <input type="text" id="hAddress" required placeholder="Παραλία Αγίας Άννας">
+      </div>
+      <div class="field">
+        <label>Κατηγορία</label>
+        <select id="hType" required>
+          <option value="">— Επίλεξε —</option>
+          <option>Boutique Hotel</option><option>Resort</option><option>Villa</option>
+          <option>Apartments</option><option>City Hotel</option><option>Bed &amp; Breakfast</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Α.Φ.Μ. εταιρείας</label>
+        <input type="text" id="hVAT" required placeholder="100123456" maxlength="9">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-secondary" type="button" style="flex:1;margin:0" onclick="show('screen-signup1')">← Πίσω</button>
+        <button class="btn-primary" type="submit" style="flex:2">Συνέχεια →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============== SIGNUP STEP 3: BANK ============== -->
+<div id="screen-signup3" class="auth-wrap" style="display:none">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-mark">J</div><div class="brand-name">JMK</div></div>
+    <div class="step-label" style="margin-top:18px">Εγγραφή Ξενοδόχου · 3 / 3</div>
+    <div class="stepper"><div class="step done"></div><div class="step done"></div><div class="step active"></div></div>
+    <h2 class="auth-title">Πληρωμές &amp; commission</h2>
+    <p class="auth-sub">Πού θέλεις να σου καταθέτουμε τις προμήθειες από κρατήσεις των επισκεπτών σου.</p>
+    <form onsubmit="return signupStep3(event)">
+      <div class="field">
+        <label>IBAN</label>
+        <input type="text" id="hIBAN" required placeholder="GR16 0110 1250 0000 0001 2345 678" maxlength="34">
+        <div class="field-hint">Θα γίνει επιβεβαίωση με μια μικρή κατάθεση €0,01</div>
+      </div>
+      <div class="field">
+        <label>Όνομα δικαιούχου</label>
+        <input type="text" id="hHolder" required placeholder="ΞΕΝΟΔΟΧΕΙΑΚΗ Α.Ε.">
+      </div>
+      <div class="field">
+        <label>Ποσοστό προμήθειας (commission share) που θα λαμβάνεις</label>
+        <select id="hCommission">
+          <option value="5" selected>5% — προεπιλογή</option>
+          <option value="4">4% — exclusive partner deals</option>
+          <option value="6">6% — premium tier (3+ μήνες)</option>
+        </select>
+        <div class="field-hint">Από το 20% take rate που εισπράττει το JMK σε κάθε booking</div>
+      </div>
+      <div style="background:var(--accent-bg);padding:14px;border-radius:10px;margin:14px 0;font-size:12px;color:var(--accent);line-height:1.5">
+        <b>Παράδειγμα:</b> Σε booking €200, παρακρατείται €40 take rate.
+        Εσύ θα λαμβάνεις <b>€10</b> (5% του booking). Εκκαθάριση 1η &amp; 15η μήνα.
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-secondary" type="button" style="flex:1;margin:0" onclick="show('screen-signup2')">← Πίσω</button>
+        <button class="btn-primary" type="submit" style="flex:2">Ολοκλήρωση εγγραφής ✓</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============== APP DASHBOARD ============== -->
+<div id="screen-app" class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">J</div><div class="brand-name">JMK</div></div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">⌂</span> Επισκόπηση</div>
+    <div class="nav-item" data-page="bookings"><span class="icon">◉</span> Κρατήσεις</div>
+    <div class="nav-item" data-page="partners"><span class="icon">⚭</span> Συνεργάτες</div>
+    <div class="nav-item" data-page="payouts"><span class="icon">€</span> Πληρωμές</div>
+    <div class="nav-item" data-page="qr"><span class="icon">▦</span> Το QR μου</div>
+    <div class="nav-item" data-page="reviews"><span class="icon">★</span> Αξιολογήσεις</div>
+    <div class="nav-item" data-page="settings"><span class="icon">⚙</span> Ρυθμίσεις</div>
+    <div class="nav-spacer"></div>
+    <div class="user-card">
+      <div class="avatar" id="userAvatar">Γ</div>
+      <div class="user-meta"><b id="userName">Γιάννης Παπαδόπουλος</b><span id="userHotel">Naxos Boutique Hotel</span></div>
+    </div>
+    <div class="nav-item" style="margin-top:10px;font-size:13px" onclick="logout()"><span class="icon">↪</span> Αποσύνδεση</div>
+  </aside>
+
+  <main class="main">
+    <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="topbar">
+        <div>
+          <h1>Καλημέρα, <span id="firstNameGreeting">Γιάννη</span> 👋</h1>
+          <div class="sub">Δες τι συμβαίνει στο ξενοδοχείο σου σήμερα</div>
+        </div>
+        <div class="top-actions">
+          <div class="month-pill" onclick="toast('Άλλαξε μήνα — placeholder','success')">▼ Ιούλιος 2026</div>
+          <button class="btn-primary" style="width:auto;padding:9px 16px;font-size:13px" onclick="show('page-qr')">⬇ Κατέβασε QR</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Έσοδα μήνα</div>
+          <div class="stat-value">€<span data-counter="1840">1.840</span></div>
+          <div class="stat-delta">▲ 24% vs Ιούνιος</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Κρατήσεις</div>
+          <div class="stat-value"><span data-counter="87">87</span></div>
+          <div class="stat-delta">▲ 12 vs Ιούνιος</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Ενεργοί επισκέπτες</div>
+          <div class="stat-value"><span data-counter="31">31</span></div>
+          <div class="stat-delta">28/14 δωμάτια ενεργά</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">NPS Επισκεπτών</div>
+          <div class="stat-value">+<span data-counter="62">62</span></div>
+          <div class="stat-delta">▲ από +48</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h">
+            <h3>📊 Έσοδα τελευταίες 8 εβδομάδες</h3>
+            <span class="link" onclick="toast('Άνοιξε λεπτομερές view','success')">Λεπτομέρειες →</span>
+          </div>
+          <div class="chart" id="weeklyChart"></div>
+          <div class="chart-labels">
+            <span>5 Μάι</span><span>12</span><span>19</span><span>26</span>
+            <span>3 Ιουν</span><span>10</span><span>17</span><span>Σήμερα</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>🏷 Ανά κατηγορία</h3></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+              <span>⛵ Boat trips</span><b style="color:var(--accent)">€242</b>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:88%;height:100%;background:var(--accent)"></div></div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:6px">
+              <span>🍴 Εστίαση</span><b style="color:var(--accent)">€119</b>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:48%;height:100%;background:var(--accent2)"></div></div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:6px">
+              <span>🛵 Ενοικιάσεις</span><b style="color:var(--accent)">€105</b>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:42%;height:100%;background:var(--gold)"></div></div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:6px">
+              <span>🏛 Πολιτισμός</span><b style="color:var(--accent)">€82</b>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:32%;height:100%;background:var(--accent2)"></div></div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:6px">
+              <span>🍕 Delivery</span><b style="color:var(--accent)">€9</b>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:6%;height:100%;background:var(--warn)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h3>💼 Πρόσφατες κρατήσεις</h3>
+          <span class="link" onclick="show('page-bookings')">Όλες →</span>
+        </div>
+        <table>
+          <thead><tr><th>Επισκέπτης</th><th>Δραστηριότητα</th><th>Συνεργάτης</th><th>Ημερομηνία</th><th>Ποσό</th><th>Δικά σου</th><th>Status</th></tr></thead>
+          <tbody id="bookingsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOOKINGS PAGE -->
+    <div class="page" id="page-bookings">
+      <div class="topbar">
+        <div><h1>Κρατήσεις</h1><div class="sub">Όλες οι κρατήσεις από επισκέπτες του ξενοδοχείου σου</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="filterBookings('all',this)">Όλες (87)</div>
+        <div class="tab" onclick="filterBookings('confirmed',this)">Επιβεβαιωμένες</div>
+        <div class="tab" onclick="filterBookings('completed',this)">Ολοκληρωμένες</div>
+        <div class="tab" onclick="filterBookings('chat_open',this)">Σε chat</div>
+        <div class="tab" onclick="filterBookings('cancelled',this)">Ακυρωμένες</div>
+      </div>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>#</th><th>Επισκέπτης</th><th>Δραστηριότητα</th><th>Συνεργάτης</th><th>Ημ/νία</th><th>Άτομα</th><th>Ποσό</th><th>Δικά σου</th><th>Status</th></tr></thead>
+          <tbody id="bookingsAllTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PARTNERS PAGE -->
+    <div class="page" id="page-partners">
+      <div class="topbar">
+        <div><h1>Συνεργάτες</h1><div class="sub">Έγκρισε τους συνεργάτες που εμφανίζονται στους επισκέπτες σου</div></div>
+        <button class="btn-primary" style="width:auto;padding:9px 16px;font-size:13px" onclick="openModal('inviteModal')">+ Πρόσκληση Συνεργάτη</button>
+      </div>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>Συνεργάτης</th><th>Κατηγορία</th><th>Rating</th><th>Κρατήσεις σου</th><th>Έσοδά σου</th><th>Status</th><th></th></tr></thead>
+          <tbody id="partnersTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAYOUTS PAGE -->
+    <div class="page" id="page-payouts">
+      <div class="topbar"><div><h1>Πληρωμές προς εμένα</h1><div class="sub">Εκκαθαρίσεις στο IBAN σου, κάθε 1η &amp; 15η του μήνα</div></div></div>
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Σύνολο 2026</div>
+          <div class="stat-value">€<span>4.823</span></div>
+          <div class="stat-delta">από 7 εκκαθαρίσεις</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">Σε εκκαθάριση</div>
+          <div class="stat-value">€<span>1.140</span></div>
+          <div class="stat-delta">~ 15 Ιουλ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Επόμενη εκκαθάριση</div>
+          <div class="stat-value" style="font-size:22px">15 Ιουλ 2026</div>
+          <div class="stat-delta">σε <span id="daysToPayout">7</span> ημέρες</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>Ημερομηνία</th><th>Περίοδος</th><th>Κρατήσεις</th><th>Ποσό</th><th>Status</th><th>IBAN</th></tr></thead>
+          <tbody id="payoutsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QR PAGE -->
+    <div class="page" id="page-qr">
+      <div class="topbar"><div><h1>Το QR του ξενοδοχείου σου</h1><div class="sub">Τοποθέτησέ το σε κάθε δωμάτιο, στη ρεσεψιόν και στο welcome card</div></div></div>
+      <div class="grid2" style="grid-template-columns:1fr 1.5fr">
+        <div class="qr-block">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700">Naxos Boutique Hotel</div>
+          <svg class="qr-svg" viewBox="0 0 200 200" id="qrSvg"></svg>
+          <div class="qr-url" id="qrUrl">jmk.app/h/x7p2k9</div>
+          <div style="margin-top:18px;display:flex;flex-direction:column;gap:6px">
+            <button class="btn-primary" onclick="toast('Κατέβασμα PDF... (demo)','success')">⬇ Printable PDF (A4)</button>
+            <button class="btn-secondary" onclick="toast('Κατέβασμα PNG...','success')">⬇ PNG (high-res)</button>
+            <button class="btn-secondary" onclick="toast('Παραγγελία βινυλίων... (demo)','success')">📦 Παραγγελία αυτοκόλλητων</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>📈 Στατιστικά QR scans</h3></div>
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-label">Scans μήνα</div><div class="stat-value">142</div><div class="stat-delta">▲ 38%</div></div>
+            <div class="stat-card green"><div class="stat-label">Activation</div><div class="stat-value">61%</div><div class="stat-delta">87 από 142</div></div>
+          </div>
+          <h4 style="margin:18px 0 10px;font-size:14px">Συμβουλές μέγιστης απόδοσης</h4>
+          <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:var(--muted)">
+            <li><b style="color:var(--ink)">Welcome card:</b> Στο μαξιλάρι ή στο γραφείο του δωματίου</li>
+            <li><b style="color:var(--ink)">Ρεσεψιόν:</b> Σε εμφανές σημείο κατά το check-in</li>
+            <li><b style="color:var(--ink)">Wi-Fi card:</b> Δίπλα στον κωδικό Wi-Fi (συνδυασμός)</li>
+            <li><b style="color:var(--ink)">Email pre-arrival:</b> Στο email επιβεβαίωσης κράτησης</li>
+            <li><b style="color:var(--ink)">Πρωινό:</b> Στο τραπέζι του πρωινού</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEWS PAGE -->
+    <div class="page" id="page-reviews">
+      <div class="topbar"><div><h1>Αξιολογήσεις</h1><div class="sub">Τι λένε οι επισκέπτες σου για τις δραστηριότητες</div></div></div>
+      <div class="stats-grid">
+        <div class="stat-card gold"><div class="stat-label">Μ.Ο. αξιολόγηση</div><div class="stat-value">4.7 ★</div><div class="stat-delta">από 64 reviews</div></div>
+        <div class="stat-card green"><div class="stat-label">5★ reviews</div><div class="stat-value">48</div><div class="stat-delta">75% του συνόλου</div></div>
+        <div class="stat-card warn"><div class="stat-label">Χρειάζονται προσοχή</div><div class="stat-value">2</div><div class="stat-delta">≤ 3 αστέρια</div></div>
+      </div>
+      <div class="card" id="reviewsList"></div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="topbar"><div><h1>Ρυθμίσεις</h1><div class="sub">Διαχείριση λογαριασμού &amp; ξενοδοχείου</div></div></div>
+      <div class="grid2" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <div class="card-h"><h3>🏨 Στοιχεία ξενοδοχείου</h3></div>
+          <div class="field"><label>Επωνυμία</label><input value="Naxos Boutique Hotel"></div>
+          <div class="field"><label>Νησί</label><input value="Νάξος"></div>
+          <div class="field"><label>Δωμάτια</label><input type="number" value="14"></div>
+          <button class="btn-primary" onclick="toast('Τα στοιχεία αποθηκεύτηκαν','success')">Αποθήκευση</button>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>⚙ Προτιμήσεις</h3></div>
+          <div class="setting-row">
+            <div><div class="setting-label">Email κρατήσεων</div><div class="setting-desc">Άμεση ειδοποίηση σε νέα κράτηση</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">SMS εκκαθάρισης</div><div class="setting-desc">Όταν λαμβάνεις πληρωμή στο IBAN</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">Εβδομαδιαίο report</div><div class="setting-desc">Σύνοψη κάθε Δευτέρα πρωί</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">Auto-approval συνεργατών</div><div class="setting-desc">Έγκριση όλων των ≥4★ συνεργατών</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <div class="card-h"><h3>💳 Στοιχεία πληρωμής</h3></div>
+        <div class="field"><label>IBAN</label><input value="GR16 0110 1250 0000 0001 2345 678" readonly></div>
+        <div class="field"><label>Δικαιούχος</label><input value="ΞΕΝΟΔΟΧΕΙΑΚΗ Α.Ε." readonly></div>
+        <div class="field"><label>Ποσοστό προμήθειας</label>
+          <select><option>5% — προεπιλογή</option><option>4%</option><option>6% — premium</option></select>
+        </div>
+        <button class="btn-secondary" onclick="toast('Στάλθηκε αίτημα αλλαγής στο support','success')">Αλλαγή IBAN (απαιτεί επιβεβαίωση)</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal: Invite Partner -->
+<div class="modal-bg" id="inviteModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('inviteModal')">×</button>
+    <h3>Πρόσκληση Συνεργάτη</h3>
+    <p style="color:var(--muted);font-size:14px;margin:6px 0 18px">Στείλε link εγγραφής σε έναν τοπικό συνεργάτη (καπετάνιο, εστιάτορα, ξεναγό κ.λπ.)</p>
+    <div class="field"><label>Όνομα συνεργάτη</label><input id="inviteName" placeholder="Captain Niko"></div>
+    <div class="field"><label>Email</label><input id="inviteEmail" type="email" placeholder="niko@example.gr"></div>
+    <div class="field"><label>Κατηγορία</label>
+      <select><option>⛵ Boat trip</option><option>🍴 Εστίαση</option><option>🏛 Tour / Πολιτισμός</option><option>🛵 Ενοικιάσεις</option><option>🍕 Delivery</option><option>Άλλο</option></select>
+    </div>
+    <button class="btn-primary" onclick="sendInvite()">📧 Στείλε πρόσκληση</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let currentUser = null;
+let signupData = {};
+
+// ===== NAVIGATION =====
+function show(id){
+  document.querySelectorAll('[id^="screen-"]').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.app').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  if(id.startsWith('screen-')){
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'flex';
+  } else if(id.startsWith('page-')){
+    const appEl = document.getElementById('screen-app');
+    appEl.style.display = 'flex';        // <-- override the inline display:none from above
+    appEl.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll(`[data-page="${id.slice(5)}"]`).forEach(n=>n.classList.add('active'));
+    document.getElementById(id).classList.add('active');
+  }
+}
+document.querySelectorAll('.nav-item[data-page]').forEach(item=>{
+  item.addEventListener('click',()=>{ show('page-'+item.dataset.page); document.getElementById('sidebar').classList.remove('open'); });
+});
+
+// ===== TOAST =====
+function toast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ===== MODAL =====
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+// ===== AUTH FLOWS =====
+function doLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const pwd = document.getElementById('loginPwd').value;
+  if(!email || !pwd){ toast('Συμπλήρωσε όλα τα πεδία','error'); return false; }
+  currentUser = { email, name:'Γιάννης Παπαδόπουλος', hotel:'Naxos Boutique Hotel', firstName:'Γιάννης' };
+  bootApp();
+  return false;
+}
+
+function signupStep1(e){
+  e.preventDefault();
+  signupData.firstname = document.getElementById('suFirstname').value;
+  signupData.lastname = document.getElementById('suLastname').value;
+  signupData.email = document.getElementById('suEmail').value;
+  signupData.phone = document.getElementById('suPhone').value;
+  show('screen-signup2');
+  return false;
+}
+
+function signupStep2(e){
+  e.preventDefault();
+  signupData.hotelName = document.getElementById('hName').value;
+  signupData.location = document.getElementById('hLocation').value;
+  signupData.rooms = document.getElementById('hRooms').value;
+  signupData.address = document.getElementById('hAddress').value;
+  signupData.type = document.getElementById('hType').value;
+  signupData.vat = document.getElementById('hVAT').value;
+  show('screen-signup3');
+  return false;
+}
+
+function signupStep3(e){
+  e.preventDefault();
+  signupData.iban = document.getElementById('hIBAN').value;
+  signupData.holder = document.getElementById('hHolder').value;
+  signupData.commission = document.getElementById('hCommission').value;
+  toast('Λογαριασμός δημιουργήθηκε ✓ Καλωσήρθες στο JMK!','success');
+  setTimeout(()=>{
+    currentUser = {
+      email: signupData.email,
+      name: signupData.firstname + ' ' + signupData.lastname,
+      hotel: signupData.hotelName,
+      firstName: signupData.firstname
+    };
+    bootApp();
+  }, 800);
+  return false;
+}
+
+function logout(){
+  currentUser = null;
+  show('screen-login');
+  toast('Αποσυνδέθηκες','success');
+}
+
+// ===== APP BOOT =====
+function bootApp(){
+  if(!currentUser) return;
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userHotel').textContent = currentUser.hotel;
+  document.getElementById('userAvatar').textContent = currentUser.firstName.charAt(0);
+  document.getElementById('firstNameGreeting').textContent = currentUser.firstName.replace(/ς$/, ''); // Γιάννη(ς)
+  show('page-dashboard');
+  renderAll();
+}
+
+// ===== DATA =====
+const recentBookings = [
+  { id:'B-2401', guest:'Maria K. (DE)', activity:'Day Cruise Παναγιά', partner:'Captain Niko', date:'19 Ιουλ', amount:220, hotelShare:11, status:'confirmed', statusLabel:'Επιβεβαιωμένη' },
+  { id:'B-2402', guest:'James W. (UK)', activity:'Wine tasting', partner:'Apeiranthos Wines', date:'18 Ιουλ', amount:90, hotelShare:4.5, status:'completed', statusLabel:'Ολοκληρώθηκε' },
+  { id:'B-2403', guest:'Sophie R. (FR)', activity:'Sunset cruise', partner:'Captain Niko', date:'17 Ιουλ', amount:140, hotelShare:7, status:'completed', statusLabel:'Ολοκληρώθηκε' },
+  { id:'B-2404', guest:'Lucia M. (IT)', activity:'Hike to Zas', partner:'Naxos Hike', date:'17 Ιουλ', amount:60, hotelShare:3, status:'chat_open', statusLabel:'Σε chat' },
+  { id:'B-2405', guest:'Anna B. (DE)', activity:'Ταβέρνα Καλάδος', partner:'Καλάδος', date:'17 Ιουλ', amount:55, hotelShare:2.75, status:'confirmed', statusLabel:'Επιβεβαιωμένη' },
+  { id:'B-2406', guest:'David J. (US)', activity:'Day Cruise Παναγιά', partner:'Captain Niko', date:'16 Ιουλ', amount:330, hotelShare:16.5, status:'completed', statusLabel:'Ολοκληρώθηκε' },
+  { id:'B-2407', guest:'Petros M. (GR)', activity:'Walk to Apollonas', partner:'Naxos Hike', date:'16 Ιουλ', amount:0, hotelShare:0, status:'cancelled', statusLabel:'Ακυρώθηκε' },
+];
+
+const allPartners = [
+  { name:'Captain Niko', cat:'⛵ Boat trip', rating:4.9, bookings:14, revenue:154, status:'active', statusLabel:'Approved' },
+  { name:'Ταβέρνα Καλάδος', cat:'🍴 Εστίαση', rating:4.8, bookings:22, revenue:88, status:'active', statusLabel:'Approved' },
+  { name:'Wine Cellar Apeiranthos', cat:'🏛 Πολιτισμός', rating:4.7, bookings:8, revenue:36, status:'active', statusLabel:'Approved' },
+  { name:'Naxos Hike', cat:'🏛 Πολιτισμός', rating:4.6, bookings:3, revenue:9, status:'pending', statusLabel:'Σε αναμονή' },
+  { name:'Naxos Bikes', cat:'🛵 Ενοικιάσεις', rating:4.5, bookings:15, revenue:78, status:'active', statusLabel:'Approved' },
+  { name:'Souvlaki Express', cat:'🍕 Delivery', rating:4.3, bookings:5, revenue:9, status:'active', statusLabel:'Approved' },
+];
+
+const allPayouts = [
+  { date:'15 Ιουλ', period:'1-15 Ιουλ', count:28, amount:'1.140,20', status:'pending' },
+  { date:'1 Ιουλ', period:'16-30 Ιουν', count:24, amount:'842,80', status:'paid' },
+  { date:'15 Ιουν', period:'1-15 Ιουν', count:18, amount:'620,40', status:'paid' },
+  { date:'1 Ιουν', period:'16-31 Μαϊ', count:14, amount:'480,30', status:'paid' },
+  { date:'15 Μαϊ', period:'1-15 Μαϊ', count:9, amount:'310,15', status:'paid' },
+];
+
+const reviews = [
+  { author:'Maria K.', country:'🇩🇪 Γερμανία', rating:5, text:'Ο Captain Niko ήταν φανταστικός. Το cruise ήταν ότι ζητούσαμε. Σας ευχαριστούμε για την πρόταση!', activity:'Day Cruise', date:'2 ημέρες πριν' },
+  { author:'James W.', country:'🇬🇧 ΗΒ', rating:5, text:'Brilliant wine tasting. Loved that the hotel app suggested it.', activity:'Wine tasting', date:'3 ημέρες πριν' },
+  { author:'Sophie R.', country:'🇫🇷 Γαλλία', rating:4, text:'Beau coucher de soleil! Très bien organisé.', activity:'Sunset cruise', date:'4 ημέρες πριν' },
+  { author:'Lucia M.', country:'🇮🇹 Ιταλία', rating:3, text:'Fine hike but transportation was 30min late.', activity:'Hike to Zas', date:'5 ημέρες πριν' },
+  { author:'David J.', country:'🇺🇸 ΗΠΑ', rating:5, text:'Amazing recommendations. Used the app for everything!', activity:'Multiple', date:'1 εβδομάδα πριν' },
+];
+
+// ===== RENDERS =====
+function renderAll(){ renderRecentBookings(); renderAllBookings(); renderPartners(); renderPayouts(); renderReviews(); renderChart(); renderQR(); }
+
+function renderRecentBookings(){
+  const tbody = document.getElementById('bookingsTbody'); if(!tbody) return;
+  tbody.innerHTML = recentBookings.slice(0,5).map(b=>`
+    <tr>
+      <td><b>${b.guest}</b></td>
+      <td>${b.activity}</td>
+      <td>${b.partner}</td>
+      <td>${b.date}</td>
+      <td>€${b.amount}</td>
+      <td><b style="color:var(--accent)">€${b.hotelShare}</b></td>
+      <td><span class="pill ${pillFor(b.status)}">${b.statusLabel}</span></td>
+    </tr>`).join('');
+}
+
+let bookingsFilter = 'all';
+function renderAllBookings(){
+  const tbody = document.getElementById('bookingsAllTbody'); if(!tbody) return;
+  const filtered = bookingsFilter==='all' ? recentBookings : recentBookings.filter(b=>b.status===bookingsFilter);
+  if(filtered.length===0){
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-ico">📭</div>Δεν υπάρχουν κρατήσεις σε αυτή την κατηγορία</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(b=>`
+    <tr>
+      <td style="color:var(--muted);font-family:monospace">${b.id}</td>
+      <td><b>${b.guest}</b></td>
+      <td>${b.activity}</td>
+      <td>${b.partner}</td>
+      <td>${b.date}</td>
+      <td>2</td>
+      <td>€${b.amount}</td>
+      <td><b style="color:var(--accent)">€${b.hotelShare}</b></td>
+      <td><span class="pill ${pillFor(b.status)}">${b.statusLabel}</span></td>
+    </tr>`).join('');
+}
+function filterBookings(status, tabEl){
+  bookingsFilter = status;
+  document.querySelectorAll('#page-bookings .tab').forEach(t=>t.classList.remove('active'));
+  tabEl.classList.add('active');
+  renderAllBookings();
+}
+
+function renderPartners(){
+  const tbody = document.getElementById('partnersTbody'); if(!tbody) return;
+  tbody.innerHTML = allPartners.map((p,i)=>`
+    <tr>
+      <td><b>${p.name}</b></td>
+      <td>${p.cat}</td>
+      <td>★ ${p.rating}</td>
+      <td>${p.bookings}</td>
+      <td><b style="color:var(--accent)">€${p.revenue}</b></td>
+      <td><span class="pill ${p.status==='active'?'green':'warn'}">${p.statusLabel}</span></td>
+      <td>
+        ${p.status==='pending'
+          ? `<button class="btn-primary" style="width:auto;padding:6px 12px;font-size:12px" onclick="approvePartner(${i})">✓ Έγκριση</button>`
+          : `<button class="btn-secondary" style="width:auto;padding:6px 12px;font-size:12px;margin:0" onclick="toast('Λεπτομέρειες συνεργάτη','success')">Λεπτομέρειες</button>`}
+      </td>
+    </tr>`).join('');
+}
+
+function approvePartner(i){
+  allPartners[i].status='active'; allPartners[i].statusLabel='Approved';
+  renderPartners();
+  toast(`Ο "${allPartners[i].name}" εγκρίθηκε`,'success');
+}
+
+function renderPayouts(){
+  const tbody = document.getElementById('payoutsTbody'); if(!tbody) return;
+  tbody.innerHTML = allPayouts.map(p=>`
+    <tr>
+      <td><b>${p.date}</b></td>
+      <td>${p.period}</td>
+      <td>${p.count}</td>
+      <td><b>€${p.amount}</b></td>
+      <td><span class="pill ${p.status==='paid'?'green':'warn'}">${p.status==='paid'?'Paid':'Pending'}</span></td>
+      <td style="font-family:monospace;font-size:11px">GR16 **78</td>
+    </tr>`).join('');
+}
+
+function renderReviews(){
+  const list = document.getElementById('reviewsList'); if(!list) return;
+  list.innerHTML = reviews.map(r=>`
+    <div style="padding:14px 0;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:flex-start">
+      <div class="avatar" style="background:var(--accent);width:42px;height:42px">${r.author.charAt(0)}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><b>${r.author}</b> · ${r.country} <span class="small" style="color:var(--muted);margin-left:8px;font-size:11px">${r.activity}</span></div>
+          <div style="color:var(--gold);font-weight:700">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+        </div>
+        <p style="margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink)">${r.text}</p>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">${r.date}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderChart(){
+  const wrap = document.getElementById('weeklyChart'); if(!wrap) return;
+  const data = [320, 480, 540, 510, 690, 780, 900, 1140];
+  const max = Math.max(...data);
+  wrap.innerHTML = data.map((v,i)=>{
+    const isCurrent = i===data.length-1 || i===data.length-2;
+    return `<div class="chart-bar ${isCurrent?'gold':''}" style="height:${(v/max)*100}%">
+              <div class="tip">€${v}</div>
+            </div>`;
+  }).join('');
+}
+
+function pillFor(status){
+  return ({confirmed:'',completed:'green',chat_open:'warn',cancelled:'red'})[status] || '';
+}
+
+function sendInvite(){
+  const name = document.getElementById('inviteName').value;
+  const email = document.getElementById('inviteEmail').value;
+  if(!name || !email){ toast('Συμπλήρωσε όλα τα πεδία','error'); return; }
+  closeModal('inviteModal');
+  toast(`Πρόσκληση στάλθηκε στον/στην ${name}`,'success');
+  document.getElementById('inviteName').value='';
+  document.getElementById('inviteEmail').value='';
+}
+
+// QR pseudo-render (random pattern for demo)
+function renderQR(){
+  const svg = document.getElementById('qrSvg'); if(!svg) return;
+  const size = 21; const cell = 200/size;
+  let s = `<rect x="0" y="0" width="200" height="200" fill="#fff"/>`;
+  // pseudo-random but deterministic pattern
+  const seed = 'jmk-h-x7p2k9';
+  let h = 0; for(let i=0;i<seed.length;i++){ h = ((h<<5)-h+seed.charCodeAt(i))|0; }
+  function rnd(i){ h = ((h*1103515245+12345)|0); return Math.abs(h)%i; }
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      // corner finder patterns
+      const isCorner = (x<7&&y<7)||(x>=size-7&&y<7)||(x<7&&y>=size-7);
+      if(isCorner){
+        const cx = x<7?x:(size-1-x), cy = y<7?y:(size-1-y);
+        const ax = Math.min(cx,6-cx), ay = Math.min(cy,6-cy);
+        const m = Math.min(ax,ay);
+        if(m===0||m===2||(m>=2&&m<=4 && (cx>=2&&cx<=4&&cy>=2&&cy<=4))){
+          s += `<rect x="${x*cell}" y="${y*cell}" width="${cell}" height="${cell}" fill="#0F4C5C"/>`;
+        }
+      } else if(rnd(2)===0){
+        s += `<rect x="${x*cell}" y="${y*cell}" width="${cell}" height="${cell}" fill="#0F4C5C"/>`;
+      }
+    }
+  }
+  svg.innerHTML = s;
+}
+
+// ===== INIT =====
+show('screen-login');
+</script>
+<script src="jmk_config.js"></script>
+<script src="jmk_store.js"></script>
+<script src="jmk_api.js"></script>
+<script src="jmk_bridge.js"></script>
+</body>
+</html>

@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<title>JMK – UI Mockups</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --accent:#0F4C5C;
+    --accent2:#5F8A8B;
+    --accent-bg:#E8F1F2;
+    --gold:#C49A6C;
+    --bg:#F7F9FA;
+    --ink:#1A1A1A;
+    --muted:#6B7B82;
+    --border:#E1E7EA;
+    --green:#2E7D32;
+    --red:#B23A3A;
+    --warn:#D9842F;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  body{padding:24px 16px 80px}
+  .header{max-width:1400px;margin:0 auto 28px;text-align:center;padding:32px 16px;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);color:#fff;border-radius:18px;box-shadow:0 8px 24px rgba(15,76,92,.18)}
+  .header h1{margin:0 0 6px;font-size:40px;letter-spacing:-.5px}
+  .header p{margin:0;opacity:.92;font-size:16px;max-width:680px;margin:0 auto}
+  .nav{max-width:1400px;margin:0 auto 24px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .nav button{border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:10px 18px;border-radius:10px;cursor:pointer;transition:all .15s}
+  .nav button:hover{background:var(--accent-bg);color:var(--accent)}
+  .nav button.active{background:var(--accent);color:#fff}
+  section{max-width:1400px;margin:0 auto;display:none}
+  section.active{display:block}
+  .section-title{margin:0 0 8px;font-size:26px;color:var(--accent)}
+  .section-sub{margin:0 0 24px;color:var(--muted);font-size:15px}
+  .row{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start}
+
+  /* Phone frame */
+  .phone{background:#1a1a1a;border-radius:32px;padding:10px;box-shadow:0 18px 50px rgba(0,0,0,.18);max-width:380px;margin:0 auto}
+  .phone-screen{background:#fff;border-radius:24px;overflow:hidden;height:680px;display:flex;flex-direction:column;position:relative}
+  .phone-notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:90px;height:22px;background:#1a1a1a;border-radius:0 0 14px 14px;z-index:5}
+  .status-bar{height:36px;background:transparent;color:var(--ink);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:space-between;padding:8px 18px 0}
+  .phone-label{margin-top:14px;font-size:13px;color:var(--muted);font-weight:600;text-align:center;letter-spacing:.4px;text-transform:uppercase}
+
+  /* Common app UI */
+  .app-header{padding:8px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+  .app-title{font-size:18px;font-weight:700;color:var(--accent)}
+  .app-icon-btn{width:36px;height:36px;border-radius:10px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:600;font-size:14px}
+  .app-body{flex:1;overflow-y:auto;padding:14px 18px}
+  .app-body::-webkit-scrollbar{width:0}
+  .app-tabbar{height:54px;border-top:1px solid var(--border);display:flex;background:#fff}
+  .app-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--muted);font-weight:600}
+  .app-tab.active{color:var(--accent)}
+  .tab-icon{font-size:18px;margin-bottom:2px}
+
+  /* Generic */
+  h3.scr-h{margin:8px 0 14px;font-size:20px}
+  .small{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent-bg);color:var(--accent)}
+  .pill.gold{background:#FBF1E5;color:var(--gold)}
+  .pill.green{background:#E5F4E5;color:var(--green)}
+  .pill.warn{background:#FBEDD9;color:var(--warn)}
+  .pill.red{background:#F8E0E0;color:var(--red)}
+  .btn{display:inline-block;padding:11px 16px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;font-size:13px;text-align:center;border:none;width:100%;margin-top:6px}
+  .btn.outline{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+  .btn.gold{background:var(--gold)}
+  .input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;margin-bottom:10px}
+  .label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+
+  /* QR mockup */
+  .qr{width:180px;height:180px;background:repeating-conic-gradient(#1a1a1a 0% 25%,#fff 0% 50%) 50%/24px 24px;border-radius:14px;margin:20px auto;border:8px solid #fff;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+  .qr-frame{position:relative}
+  .qr-corner{position:absolute;width:24px;height:24px;border:3px solid var(--accent)}
+  .qr-tl{top:-4px;left:-4px;border-right:none;border-bottom:none}
+  .qr-tr{top:-4px;right:-4px;border-left:none;border-bottom:none}
+  .qr-bl{bottom:-4px;left:-4px;border-right:none;border-top:none}
+  .qr-br{bottom:-4px;right:-4px;border-left:none;border-top:none}
+
+  /* Hero card */
+  .hero-card{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:18px;border-radius:16px;margin-bottom:14px}
+  .hero-card .h{font-size:20px;font-weight:700;margin:0 0 4px}
+  .hero-card .s{font-size:13px;opacity:.9}
+
+  /* Plan card */
+  .plan-card{border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;background:#fff;cursor:pointer;transition:all .15s;position:relative}
+  .plan-card:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(15,76,92,.08)}
+  .plan-card.selected{border-color:var(--accent);border-width:2px;background:var(--accent-bg)}
+  .plan-theme{font-size:13px;color:var(--accent);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+  .plan-title{font-size:16px;font-weight:700;margin-bottom:8px}
+  .plan-items{display:flex;flex-direction:column;gap:6px}
+  .plan-item{display:flex;align-items:center;font-size:12px;gap:8px}
+  .plan-time{color:var(--muted);font-weight:600;min-width:52px}
+  .plan-price{position:absolute;top:14px;right:14px;font-size:13px;font-weight:700;color:var(--accent)}
+
+  /* Activity card */
+  .activity-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;margin-bottom:12px}
+  .activity-image{height:120px;background:linear-gradient(120deg,#5F8A8B,#0F4C5C);position:relative;display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px}
+  .activity-image.beach{background:linear-gradient(120deg,#86C5DA,#5085A5)}
+  .activity-image.taverna{background:linear-gradient(120deg,#C49A6C,#8B5E34)}
+  .activity-image.hike{background:linear-gradient(120deg,#7FA068,#445D38)}
+  .activity-info{padding:12px 14px}
+  .activity-info .t{font-size:14px;font-weight:700;margin-bottom:4px}
+  .activity-info .d{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.4}
+  .activity-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+
+  /* Chat */
+  .chat-list{display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:85%;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.4}
+  .msg.them{background:#F0F2F4;align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.me{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .msg.system{background:#FBEDD9;color:#7A4D14;align-self:center;font-size:11px;text-align:center;border-radius:8px;padding:6px 10px}
+  .chat-input{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+  .chat-input input{flex:1;border:1px solid var(--border);border-radius:18px;padding:8px 14px;font-size:13px}
+  .chat-input button{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:14px}
+
+  /* Weather strip */
+  .weather{display:flex;justify-content:space-around;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px}
+  .weather-day{text-align:center;font-size:11px;color:var(--muted)}
+  .weather-day .ico{font-size:22px;margin:4px 0}
+  .weather-day .t{font-size:13px;font-weight:600;color:var(--ink)}
+
+  /* Dashboard */
+  .dash{background:#fff;border-radius:20px;padding:28px;box-shadow:0 4px 18px rgba(0,0,0,.04);height:680px;overflow-y:auto;border:1px solid var(--border)}
+  .dash::-webkit-scrollbar{width:6px}
+  .dash::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+  .dash-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+  .dash-h .name{font-size:22px;font-weight:700}
+  .dash-h .role{font-size:12px;color:var(--muted)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+  .stat{background:linear-gradient(135deg,#fff,var(--accent-bg));border:1px solid var(--border);border-radius:12px;padding:14px}
+  .stat .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .stat .value{font-size:22px;font-weight:700;color:var(--accent)}
+  .stat .delta{font-size:11px;color:var(--green);margin-top:2px;font-weight:600}
+  .panel{background:#fafbfc;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid var(--border)}
+  .panel-h{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .panel-h a{font-size:11px;color:var(--accent);font-weight:600;text-decoration:none}
+  .table{width:100%;border-collapse:collapse;font-size:12px}
+  .table th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:10px;border-bottom:1px solid var(--border)}
+  .table td{padding:10px;border-bottom:1px solid var(--border)}
+  .table tr:last-child td{border-bottom:none}
+  .legend{display:flex;gap:8px;font-size:11px;color:var(--muted);align-items:center}
+  .legend .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+  .chart{height:130px;display:flex;align-items:flex-end;gap:6px;padding:10px 0}
+  .bar{flex:1;background:linear-gradient(to top,var(--accent) 0%,var(--accent2) 100%);border-radius:4px 4px 0 0;position:relative;min-height:8px;transition:opacity .2s}
+  .bar:hover{opacity:.8}
+  .bar.gold{background:linear-gradient(to top,var(--gold) 0%,#E2BD96 100%)}
+
+  /* Activity upload */
+  .upload-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  .media-tile{aspect-ratio:1;background:linear-gradient(120deg,#5F8A8B,#0F4C5C);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+  .media-tile.add{background:#fff;color:var(--muted);border:2px dashed var(--border);font-size:24px}
+
+  /* Booking timeline */
+  .timeline{position:relative;padding-left:22px}
+  .timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--border)}
+  .tl-item{position:relative;margin-bottom:14px;padding-bottom:6px}
+  .tl-item::before{content:"";position:absolute;left:-18px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 0 0 2px var(--accent-bg)}
+  .tl-item.done::before{background:var(--green)}
+  .tl-item.pending::before{background:#fff;border:2px solid var(--border)}
+  .tl-time{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .tl-title{font-size:13px;font-weight:600;margin:2px 0}
+  .tl-desc{font-size:11px;color:var(--muted)}
+
+  /* Anti-bypass alert */
+  .alert{background:#FBEDD9;border-left:4px solid var(--warn);padding:12px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#7A4D14}
+  .alert b{color:var(--warn)}
+
+  /* Footer note */
+  .footer{max-width:1400px;margin:48px auto 0;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>JMK · UI Mockups</h1>
+  <p>Οπτική παρουσίαση των τριών βασικών διεπαφών της εφαρμογής: Επισκέπτης (PWA), Ξενοδόχος (Dashboard) & Συνεργάτης (Mobile App)</p>
+</div>
+
+<nav class="nav">
+  <button class="active" data-target="guest">Επισκέπτης (PWA)</button>
+  <button data-target="hotelier">Ξενοδόχος Dashboard</button>
+  <button data-target="partner">Συνεργάτης App</button>
+  <button data-target="flow">User Flow</button>
+</nav>
+
+<!-- ========== GUEST ========== -->
+<section id="guest" class="active">
+  <h2 class="section-title">Επισκέπτης – Mobile PWA</h2>
+  <p class="section-sub">Ο επισκέπτης σκανάρει το QR στο δωμάτιο και ανοίγει την εφαρμογή χωρίς εγκατάσταση. Παρακάτω 4 βασικές οθόνες της εμπειρίας του.</p>
+
+  <div class="row">
+
+    <!-- 1. QR Onboarding -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:41</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div class="app-title" style="color:var(--accent)">JMK</div>
+          <div class="small">EL · EN</div>
+        </div>
+        <div class="app-body" style="padding-top:8px">
+          <div style="text-align:center;margin-top:8px">
+            <span class="pill gold">Naxos Boutique Hotel</span>
+            <h3 class="scr-h" style="margin-top:18px;color:var(--accent)">Καλώς ήρθες στη Νάξο!</h3>
+            <p class="small" style="line-height:1.5;margin:0 18px">Ο ψηφιακός σου πλοηγός είναι έτοιμος. Πες μας τις ημέρες παραμονής και θα φτιάξουμε ένα πλάνο μόνο για εσένα.</p>
+          </div>
+          <div style="margin-top:24px">
+            <label class="label">Ημέρες Παραμονής</label>
+            <div class="upload-row">
+              <input class="input" placeholder="Check-in" value="15 Ιουλ"/>
+              <input class="input" placeholder="Check-out" value="21 Ιουλ"/>
+            </div>
+            <label class="label" style="margin-top:6px">Με ποιον ταξιδεύεις;</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="pill" style="background:var(--accent);color:#fff">Ζευγάρι</span>
+              <span class="pill">Οικογένεια</span>
+              <span class="pill">Φίλοι</span>
+              <span class="pill">Μόνος</span>
+            </div>
+            <button class="btn" style="margin-top:18px">Συνέχεια →</button>
+          </div>
+        </div>
+        <div class="app-tabbar">
+          <div class="app-tab active"><div class="tab-icon">⌂</div>Αρχική</div>
+          <div class="app-tab"><div class="tab-icon">◷</div>Πλάνα</div>
+          <div class="app-tab"><div class="tab-icon">◉</div>Κρατήσεις</div>
+          <div class="app-tab"><div class="tab-icon">☰</div>Προφίλ</div>
+        </div>
+      </div></div>
+      <div class="phone-label">1. Onboarding (μετά το QR scan)</div>
+    </div>
+
+    <!-- 2. Daily Plans -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:42</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div>
+            <div class="small">Πέμπτη</div>
+            <div class="app-title">17 Ιουλίου</div>
+          </div>
+          <div class="app-icon-btn">▼</div>
+        </div>
+        <div class="app-body">
+          <div class="weather">
+            <div class="weather-day"><div>Πεμ</div><div class="ico">☀</div><div class="t">29°</div></div>
+            <div class="weather-day"><div>Παρ</div><div class="ico">☁</div><div class="t">26°</div></div>
+            <div class="weather-day"><div>Σαβ</div><div class="ico">⛈</div><div class="t">22°</div></div>
+            <div class="weather-day"><div>Κυρ</div><div class="ico">☀</div><div class="t">28°</div></div>
+            <div class="weather-day"><div>Δευ</div><div class="ico">☀</div><div class="t">30°</div></div>
+          </div>
+          <h3 class="scr-h">Διάλεξε το πλάνο σου</h3>
+
+          <div class="plan-card selected">
+            <div class="plan-price">€220</div>
+            <div class="plan-theme">A · Παραλίες Νότου</div>
+            <div class="plan-title">Plaka, Mikri Vigla, Sunset</div>
+            <div class="plan-items">
+              <div class="plan-item"><span class="plan-time">10:00</span><span>⛵ Day cruise προς Παναγιά</span></div>
+              <div class="plan-item"><span class="plan-time">14:00</span><span>🍴 Ταβέρνα Καλάδος</span></div>
+              <div class="plan-item"><span class="plan-time">19:30</span><span>🌅 Sunset @ Πύργος</span></div>
+            </div>
+          </div>
+
+          <div class="plan-card">
+            <div class="plan-price">€95</div>
+            <div class="plan-theme">B · Ορεινή Νάξος</div>
+            <div class="plan-title">Χωριά & Πεζοπορία</div>
+            <div class="plan-items">
+              <div class="plan-item"><span class="plan-time">09:30</span><span>🏛 Φιλώτι &amp; Απείρανθος</span></div>
+              <div class="plan-item"><span class="plan-time">13:30</span><span>🥖 Παραδοσιακό γεύμα Ντόπιες</span></div>
+              <div class="plan-item"><span class="plan-time">17:00</span><span>🥾 Walk Ζα μυρωδιές</span></div>
+            </div>
+          </div>
+
+          <div class="plan-card">
+            <div class="plan-price">€140</div>
+            <div class="plan-theme">C · Πολιτιστική</div>
+            <div class="plan-title">Πορτάρα → Κάστρο → Wine</div>
+            <div class="plan-items">
+              <div class="plan-item"><span class="plan-time">10:00</span><span>🏛 Πορτάρα + Παλιά Πόλη</span></div>
+              <div class="plan-item"><span class="plan-time">15:00</span><span>🍷 Wine tasting</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="app-tabbar">
+          <div class="app-tab"><div class="tab-icon">⌂</div>Αρχική</div>
+          <div class="app-tab active"><div class="tab-icon">◷</div>Πλάνα</div>
+          <div class="app-tab"><div class="tab-icon">◉</div>Κρατήσεις</div>
+          <div class="app-tab"><div class="tab-icon">☰</div>Προφίλ</div>
+        </div>
+      </div></div>
+      <div class="phone-label">2. 3 Ημερήσια Πλάνα</div>
+    </div>
+
+    <!-- 3. Activity detail -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:44</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div class="app-icon-btn">←</div>
+          <div class="app-title">Day Cruise</div>
+          <div class="app-icon-btn">♡</div>
+        </div>
+        <div class="app-body" style="padding:0">
+          <div class="activity-image" style="height:180px;font-size:60px">⛵</div>
+          <div style="padding:14px 18px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div>
+                <div class="plan-theme">Boat Trip · 6 ώρες</div>
+                <div style="font-size:18px;font-weight:700">Cruise προς Παναγιά</div>
+                <div class="small">από Νίκος Μαρινάκης · ★ 4,9 (214 reviews)</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:22px;font-weight:700;color:var(--accent)">€110</div>
+                <div class="small">/άτομο</div>
+              </div>
+            </div>
+            <p class="small" style="line-height:1.5">Ολοήμερη κρουαζιέρα στις πιο όμορφες παραλίες των νοτίων ακτών. Περιλαμβάνεται γεύμα, αναψυκτικά και εξοπλισμός snorkeling.</p>
+            <div style="display:flex;gap:6px;margin:12px 0;flex-wrap:wrap">
+              <span class="pill green">✓ Καιρός κατάλληλος</span>
+              <span class="pill">🍽 Γεύμα incl.</span>
+              <span class="pill">🤿 Snorkeling</span>
+            </div>
+            <div class="panel" style="margin:0">
+              <div class="panel-h">Διαθεσιμότητα</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <span class="pill green">17 Ιουλ ✓</span>
+                <span class="pill">18 Ιουλ</span>
+                <span class="pill red">19 Ιουλ ✗</span>
+                <span class="pill">20 Ιουλ</span>
+              </div>
+            </div>
+            <button class="btn" style="margin-top:14px">💬 Ξεκίνα chat με τον Νίκο</button>
+            <button class="btn outline" style="margin-top:6px">Δες παρόμοιες</button>
+          </div>
+        </div>
+      </div></div>
+      <div class="phone-label">3. Λεπτομέρεια Δραστηριότητας</div>
+    </div>
+
+    <!-- 4. Chat with Partner -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:50</span><span>● ● ●</span></div>
+        <div class="app-header" style="padding:8px 14px 12px">
+          <div class="app-icon-btn">←</div>
+          <div style="flex:1;text-align:center">
+            <div style="font-size:14px;font-weight:700">Νίκος · Captain Niko</div>
+            <div class="small" style="color:var(--green)">● online</div>
+          </div>
+          <div class="app-icon-btn">⋯</div>
+        </div>
+        <div class="app-body" style="background:#FAFBFC">
+          <div class="chat-list">
+            <div class="msg system">Συνομιλία για το «Day Cruise · 17 Ιουλ»</div>
+            <div class="msg me">Καλημέρα! Ενδιαφέρομαι για 2 άτομα στις 17 Ιουλίου. Είναι διαθέσιμο;</div>
+            <div class="msg them">Καλημέρα! Ναι, έχει διαθεσιμότητα. Ώρα αναχώρησης 10:00 από το λιμάνι. Θέλετε να σας πάρουμε από το ξενοδοχείο;</div>
+            <div class="msg me">Ναι παρακαλώ. Ποια είναι η τελική τιμή;</div>
+            <div class="msg them">€220 και τα δύο άτομα. Περιλαμβάνεται γεύμα + transfer.</div>
+            <div class="msg system">⚠ Διαπιστώθηκε ανταλλαγή τηλεφώνου — μηνύματα κρύβονται μέχρι την προπληρωμή</div>
+            <div class="msg them">Για να επιβεβαιώσω, πάτησε «Συμφωνώ &amp; Πλήρωσε» από κάτω 👇</div>
+          </div>
+        </div>
+        <div style="padding:10px 14px;background:#fff;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <div class="small">Συμφωνημένη τιμή</div>
+              <div style="font-size:17px;font-weight:700;color:var(--accent)">€220,00</div>
+            </div>
+            <button class="btn gold" style="width:auto;padding:11px 18px;margin:0">✓ Συμφωνώ &amp; Πλήρωσε</button>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input placeholder="Γράψε ένα μήνυμα..."/>
+          <button>➤</button>
+        </div>
+      </div></div>
+      <div class="phone-label">4. In-app Chat &amp; Πληρωμή</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== HOTELIER ========== -->
+<section id="hotelier">
+  <h2 class="section-title">Ξενοδόχος – Web Dashboard</h2>
+  <p class="section-sub">Ο ξενοδόχος έχει πρόσβαση από browser ή native mobile app. Παρακολουθεί τις προμήθειες που εισπράττει και διαχειρίζεται τους εγκεκριμένους συνεργάτες.</p>
+
+  <div class="row">
+    <div class="dash">
+      <div class="dash-h">
+        <div>
+          <div class="name">Naxos Boutique Hotel</div>
+          <div class="role">Ξενοδόχος · Νάξος · 14 δωμάτια</div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">Ιούλιος 2026</div>
+          <span class="pill green">● Active</span>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Έσοδα μήνα</div>
+          <div class="value">€1.840</div>
+          <div class="delta">▲ 24% vs Ιούν</div>
+        </div>
+        <div class="stat">
+          <div class="label">Κρατήσεις</div>
+          <div class="value">87</div>
+          <div class="delta">▲ 12 vs Ιούν</div>
+        </div>
+        <div class="stat">
+          <div class="label">Ενεργοί επισκέπτες</div>
+          <div class="value">31</div>
+          <div class="delta">28 δωμάτια ενεργά</div>
+        </div>
+        <div class="stat">
+          <div class="label">NPS Επισκεπτών</div>
+          <div class="value">+62</div>
+          <div class="delta">▲ από +48</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">📊 Έσοδα τελευταίες 8 εβδομάδες<a href="#">Όλα →</a></div>
+        <div class="chart">
+          <div class="bar" style="height:30%"></div>
+          <div class="bar" style="height:42%"></div>
+          <div class="bar" style="height:55%"></div>
+          <div class="bar" style="height:50%"></div>
+          <div class="bar" style="height:68%"></div>
+          <div class="bar" style="height:78%"></div>
+          <div class="bar gold" style="height:88%"></div>
+          <div class="bar gold" style="height:96%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+          <span>5 Μάι</span><span>Ιούν</span><span>Ιούλ</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">🏷 Προμήθειες ανά κατηγορία</div>
+        <table class="table">
+          <thead><tr><th>Κατηγορία</th><th>Κρατήσεις</th><th>GMV</th><th>Δικά μου €</th></tr></thead>
+          <tbody>
+            <tr><td>⛵ Boat trips</td><td>22</td><td>€4.840</td><td><b>€242</b></td></tr>
+            <tr><td>🍴 Εστίαση</td><td>34</td><td>€2.380</td><td><b>€119</b></td></tr>
+            <tr><td>🏛 Tours / Πολιτισμός</td><td>11</td><td>€1.650</td><td><b>€82</b></td></tr>
+            <tr><td>🛵 Ενοικιάσεις</td><td>15</td><td>€2.100</td><td><b>€105</b></td></tr>
+            <tr><td>🍕 Delivery</td><td>5</td><td>€185</td><td><b>€9</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">👥 Συνεργάτες <a href="#">Διαχείριση →</a></div>
+        <table class="table">
+          <thead><tr><th>Συνεργάτης</th><th>Κατηγορία</th><th>Κρατήσεις</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><b>Captain Niko</b><br><span class="small">★ 4.9</span></td><td>Boat trip</td><td>14</td><td><span class="pill green">Approved</span></td></tr>
+            <tr><td><b>Ταβέρνα Καλάδος</b><br><span class="small">★ 4.8</span></td><td>Εστίαση</td><td>22</td><td><span class="pill green">Approved</span></td></tr>
+            <tr><td><b>Naxos Hike</b><br><span class="small">★ 4.6</span></td><td>Tour</td><td>3</td><td><span class="pill warn">Pending</span></td></tr>
+            <tr><td><b>Wine Cellar Apeiranthos</b><br><span class="small">★ 4.7</span></td><td>Πολιτισμός</td><td>8</td><td><span class="pill green">Approved</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="panel">
+          <div class="panel-h">🆔 Το QR του ξενοδοχείου</div>
+          <div class="qr-frame" style="position:relative;width:160px;height:160px;margin:8px auto">
+            <div class="qr" style="margin:0;width:160px;height:160px"></div>
+            <div class="qr-corner qr-tl"></div><div class="qr-corner qr-tr"></div>
+            <div class="qr-corner qr-bl"></div><div class="qr-corner qr-br"></div>
+          </div>
+          <p class="small" style="text-align:center;margin:8px 0 0">jmk.app/h/x7p2k9</p>
+          <button class="btn" style="margin-top:10px">⤓ Κατέβασε printable PDF</button>
+        </div>
+        <div class="panel">
+          <div class="panel-h">💰 Πληρωμές προς εμένα</div>
+          <table class="table">
+            <tbody>
+              <tr><td>15 Ιουν</td><td>€620,40</td><td><span class="pill green">Paid</span></td></tr>
+              <tr><td>1 Ιουλ</td><td>€842,80</td><td><span class="pill green">Paid</span></td></tr>
+              <tr><td>15 Ιουλ</td><td>€1.140,20</td><td><span class="pill warn">Pending</span></td></tr>
+            </tbody>
+          </table>
+          <p class="small" style="margin-top:10px">Εκκαθάριση κάθε 1η &amp; 15η μήνα στο IBAN GR**</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========== PARTNER ========== -->
+<section id="partner">
+  <h2 class="section-title">Συνεργάτης – Mobile App</h2>
+  <p class="section-sub">Ο συνεργάτης (καπετάνιος, εστιάτορας, ξεναγός) διαχειρίζεται listings, διαθεσιμότητα, chat με πελάτες και κρατήσεις από το κινητό του.</p>
+
+  <div class="row">
+
+    <!-- Listings -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:41</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div class="app-title">Οι Δραστηριότητές μου</div>
+          <div class="app-icon-btn" style="background:var(--accent);color:#fff">+</div>
+        </div>
+        <div class="app-body">
+          <div class="hero-card">
+            <div class="h">€8.420</div>
+            <div class="s">Έσοδα Ιουλίου · 38 κρατήσεις</div>
+          </div>
+          <h3 class="scr-h">Listings (3)</h3>
+
+          <div class="activity-card">
+            <div class="activity-image" style="height:90px">⛵</div>
+            <div class="activity-info">
+              <div class="t">Day Cruise προς Παναγιά</div>
+              <div class="d">6 ώρες · 8 άτομα · €110/άτομο</div>
+              <div class="activity-meta">
+                <span class="pill green">● Ενεργό</span>
+                <span class="small">★ 4.9 · 22 κρατήσεις</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="activity-card">
+            <div class="activity-image" style="height:90px">🌅</div>
+            <div class="activity-info">
+              <div class="t">Sunset Cruise</div>
+              <div class="d">3 ώρες · 6 άτομα · €70/άτομο</div>
+              <div class="activity-meta">
+                <span class="pill green">● Ενεργό</span>
+                <span class="small">★ 4.8 · 14 κρατήσεις</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="activity-card">
+            <div class="activity-image" style="height:90px">🤿</div>
+            <div class="activity-info">
+              <div class="t">Half-day Snorkeling</div>
+              <div class="d">3 ώρες · 6 άτομα · €55/άτομο</div>
+              <div class="activity-meta">
+                <span class="pill warn">● Σε αναμονή</span>
+                <span class="small">2 review σε εκκρεμότητα</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="app-tabbar">
+          <div class="app-tab active"><div class="tab-icon">◉</div>Listings</div>
+          <div class="app-tab"><div class="tab-icon">◷</div>Calendar</div>
+          <div class="app-tab"><div class="tab-icon">💬</div>Chat <span style="background:var(--red);color:#fff;border-radius:8px;padding:0 5px;font-size:9px;margin-left:2px">3</span></div>
+          <div class="app-tab"><div class="tab-icon">€</div>Έσοδα</div>
+        </div>
+      </div></div>
+      <div class="phone-label">1. Listings &amp; Έσοδα</div>
+    </div>
+
+    <!-- Upload -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:42</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div class="app-icon-btn">←</div>
+          <div class="app-title">Νέα Δραστηριότητα</div>
+          <div class="small">2/4</div>
+        </div>
+        <div class="app-body">
+          <label class="label">Τίτλος</label>
+          <input class="input" value="Day Cruise προς Παναγιά"/>
+          <label class="label">Περιγραφή</label>
+          <textarea class="input" rows="3" style="resize:none">Ολοήμερη κρουαζιέρα στις νότιες παραλίες με γεύμα &amp; snorkeling.</textarea>
+          <label class="label">Φωτογραφίες &amp; Βίντεο</label>
+          <div class="media-grid">
+            <div class="media-tile">📷</div>
+            <div class="media-tile" style="background:linear-gradient(120deg,#86C5DA,#5085A5)">📹</div>
+            <div class="media-tile" style="background:linear-gradient(120deg,#7FA068,#445D38)">📷</div>
+            <div class="media-tile add">+</div>
+          </div>
+          <div class="upload-row" style="margin-top:14px">
+            <div>
+              <label class="label">Διάρκεια</label>
+              <input class="input" value="6 ώρες"/>
+            </div>
+            <div>
+              <label class="label">Max άτομα</label>
+              <input class="input" value="8"/>
+            </div>
+          </div>
+          <label class="label">Τιμή ανά άτομο</label>
+          <input class="input" value="€110"/>
+          <label class="label">Προϋποθέσεις καιρού</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="pill" style="background:var(--accent);color:#fff">Άνεμος &lt; 30 km/h</span>
+            <span class="pill" style="background:var(--accent);color:#fff">Όχι βροχή</span>
+            <span class="pill">+ Προσθήκη</span>
+          </div>
+          <button class="btn" style="margin-top:18px">Συνέχεια →</button>
+        </div>
+      </div></div>
+      <div class="phone-label">2. Upload Δραστηριότητας</div>
+    </div>
+
+    <!-- Booking detail -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:43</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div class="app-icon-btn">←</div>
+          <div>
+            <div class="app-title">Maria K.</div>
+            <div class="small">2 άτομα · 17 Ιουλ</div>
+          </div>
+          <div class="app-icon-btn">⋯</div>
+        </div>
+        <div class="app-body">
+          <div style="background:linear-gradient(135deg,#E5F4E5,#C8E6C9);padding:14px;border-radius:12px;margin-bottom:14px;text-align:center">
+            <div class="small" style="color:var(--green);font-weight:700">✓ Πληρώθηκε προπληρωμή</div>
+            <div style="font-size:24px;font-weight:700;color:var(--green);margin-top:4px">€220,00</div>
+            <div class="small">Συνολική τιμή · €176 σε σένα μετά την δραστηριότητα</div>
+          </div>
+
+          <h3 class="scr-h" style="font-size:16px;margin:8px 0">Λεπτομέρειες</h3>
+
+          <div class="timeline">
+            <div class="tl-item done">
+              <div class="tl-time">17 Ιουλ · 09:30</div>
+              <div class="tl-title">Chat ξεκινησε</div>
+              <div class="tl-desc">Maria στείλε αρχικό μήνυμα</div>
+            </div>
+            <div class="tl-item done">
+              <div class="tl-time">17 Ιουλ · 09:50</div>
+              <div class="tl-title">Συμφωνία τιμής €220</div>
+              <div class="tl-desc">Επιβεβαίωση από συν τα 2 άτομα</div>
+            </div>
+            <div class="tl-item done">
+              <div class="tl-time">17 Ιουλ · 09:51</div>
+              <div class="tl-title">Πληρωμή ολοκληρώθηκε</div>
+              <div class="tl-desc">€220,00 μέσω Visa **4242</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-time">19 Ιουλ · 10:00</div>
+              <div class="tl-title">Αναχώρηση από λιμάνι</div>
+              <div class="tl-desc">Pickup από Naxos Boutique στις 09:30</div>
+            </div>
+            <div class="tl-item pending">
+              <div class="tl-time">19 Ιουλ · 16:00</div>
+              <div class="tl-title">Ολοκλήρωση δραστηριότητας</div>
+              <div class="tl-desc">Σκάναρε QR του πελάτη</div>
+            </div>
+            <div class="tl-item pending">
+              <div class="tl-time">21 Ιουλ</div>
+              <div class="tl-title">Εκκαθάριση πληρωμής</div>
+              <div class="tl-desc">€176 στο IBAN σου</div>
+            </div>
+          </div>
+
+          <button class="btn" style="margin-top:14px">📷 Σκάναρε QR πελάτη @ check-in</button>
+          <button class="btn outline" style="margin-top:6px">💬 Ανοιχτή συνομιλία</button>
+        </div>
+      </div></div>
+      <div class="phone-label">3. Λεπτομέρεια Κράτησης</div>
+    </div>
+
+    <!-- Calendar/Earnings -->
+    <div>
+      <div class="phone"><div class="phone-screen"><div class="phone-notch"></div>
+        <div class="status-bar"><span>9:44</span><span>● ● ●</span></div>
+        <div class="app-header">
+          <div class="app-title">Έσοδα</div>
+          <div class="small">Ιούλιος 2026</div>
+        </div>
+        <div class="app-body">
+          <div class="hero-card" style="background:linear-gradient(135deg,var(--gold),#A07A52)">
+            <div class="s">Σύνολο Ιουλίου</div>
+            <div class="h" style="font-size:32px">€8.420</div>
+            <div class="s">38 κρατήσεις · μ.ο. €222</div>
+          </div>
+
+          <div class="alert">
+            <b>Επόμενη εκκαθάριση:</b> €1.840 στις 21 Ιουλ — 8 ολοκληρωμένες κρατήσεις σε αναμονή release.
+          </div>
+
+          <h3 class="scr-h" style="font-size:16px;margin:14px 0 8px">Ανάλυση</h3>
+          <table class="table">
+            <thead><tr><th>Κατηγορία</th><th>Κρατήσεις</th><th>Ποσό</th></tr></thead>
+            <tbody>
+              <tr><td>Day Cruise</td><td>22</td><td><b>€4.840</b></td></tr>
+              <tr><td>Sunset Cruise</td><td>14</td><td><b>€2.940</b></td></tr>
+              <tr><td>Snorkeling</td><td>2</td><td><b>€660</b></td></tr>
+            </tbody>
+          </table>
+
+          <h3 class="scr-h" style="font-size:16px;margin:18px 0 8px">Trend (8 εβδ.)</h3>
+          <div class="chart">
+            <div class="bar" style="height:25%"></div>
+            <div class="bar" style="height:35%"></div>
+            <div class="bar" style="height:50%"></div>
+            <div class="bar" style="height:48%"></div>
+            <div class="bar" style="height:68%"></div>
+            <div class="bar gold" style="height:80%"></div>
+            <div class="bar gold" style="height:88%"></div>
+            <div class="bar gold" style="height:95%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)">
+            <span>Μάι</span><span>Ιούν</span><span>Ιούλ</span>
+          </div>
+        </div>
+        <div class="app-tabbar">
+          <div class="app-tab"><div class="tab-icon">◉</div>Listings</div>
+          <div class="app-tab"><div class="tab-icon">◷</div>Calendar</div>
+          <div class="app-tab"><div class="tab-icon">💬</div>Chat</div>
+          <div class="app-tab active"><div class="tab-icon">€</div>Έσοδα</div>
+        </div>
+      </div></div>
+      <div class="phone-label">4. Έσοδα &amp; Trend</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== FLOW ========== -->
+<section id="flow">
+  <h2 class="section-title">Ολική Ροή Χρήσης</h2>
+  <p class="section-sub">Πώς ένα boat trip €220 από αρχή μέχρι τέλος. Σε κάθε βήμα φαίνεται ποιος εμπλέκεται και τι κερδίζει.</p>
+
+  <div class="dash">
+    <div class="timeline" style="padding-left:30px">
+      <div class="tl-item done">
+        <div class="tl-time">Day 0 · Άφιξη στο ξενοδοχείο</div>
+        <div class="tl-title">Maria κάνει check-in στο Naxos Boutique Hotel</div>
+        <div class="tl-desc">Στην ρεσεψιόν παίρνει welcome card με το QR του ξενοδοχείου. Σκανάρει το QR με την κάμερα του τηλεφώνου της.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 0 · 17:00</div>
+        <div class="tl-title">Onboarding (60 sec)</div>
+        <div class="tl-desc">Δηλώνει: ζευγάρι, 25-35, αγαπά θάλασσα και φαγητό, budget €1500. Επιλέγει ημέρες 15-21 Ιουλ.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 0 · 17:02</div>
+        <div class="tl-title">JMK δημιουργεί 6 ημέρες × 3 πλάνα = 18 διαδρομές</div>
+        <div class="tl-desc">Plan Engine συνδυάζει: τοπική γνώση + 5νθήμερη πρόβλεψη καιρού + προτάσεις ξενοδόχου + ratings συνεργατών.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 2 · 09:30 (πρωί δραστηριότητας)</div>
+        <div class="tl-title">Διαλέγει «Πλάνο A · Day Cruise προς Παναγιά»</div>
+        <div class="tl-desc">Πατά στην δραστηριότητα → ανοίγει chat με τον Captain Niko. Επιβεβαιώνει 2 άτομα, transfer από ξενοδοχείο.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 2 · 09:50</div>
+        <div class="tl-title">Συμφωνία τιμής €220</div>
+        <div class="tl-desc">Anti-bypass engine ελέγχει τα μηνύματα, κρύβει τηλέφωνα. Maria πατά «Συμφωνώ &amp; Πλήρωσε» → Stripe payment.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 2 · 09:52</div>
+        <div class="tl-title">Πληρωμή €220 ολοκληρώθηκε</div>
+        <div class="tl-desc">Stripe χρεώνει τη Visa, παρακρατεί €40 (20% προμήθεια JMK). Δημιουργείται commissions_ledger entry.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 2 · 10:00 (επόμενη μέρα)</div>
+        <div class="tl-title">Αναχώρηση cruise · Captain Niko σκανάρει QR Maria</div>
+        <div class="tl-desc">Booking «κλειδώνει» στο σύστημα. Anti-bypass engine επιβεβαιώνει εκτέλεση μέσω πλατφόρμας.</div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-time">Day 4 · μετά 24h dispute window</div>
+        <div class="tl-title">Auto-release πληρωμής</div>
+        <div class="tl-desc">€176 (80%) → Captain Niko · €10 (5%) → Naxos Hotel · €30 (~14%) → Πλατφόρμα JMK · €4 (~1%) → Stripe fees.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">Day 5 · απογευμα</div>
+        <div class="tl-title">Maria λαμβάνει review request</div>
+        <div class="tl-desc">Δίνει 5★ στον Captain. Score του ανεβαίνει, ranking στο plan engine βελτιώνεται.</div>
+      </div>
+      <div class="tl-item pending">
+        <div class="tl-time">15 του μήνα · Εκκαθάριση</div>
+        <div class="tl-title">Ξενοδόχος λαμβάνει συγκεντρωτική προμήθεια</div>
+        <div class="tl-desc">Naxos Hotel: 28 κρατήσεις × ~€10 = €280 στο IBAN του.</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:24px">
+      <div class="panel-h">💸 Διανομή €220 σε ένα booking</div>
+      <table class="table">
+        <thead><tr><th>Stakeholder</th><th>Ποσό</th><th>%</th><th>Πότε</th></tr></thead>
+        <tbody>
+          <tr><td><b>Captain Niko (Συνεργάτης)</b></td><td>€176,00</td><td>80,0%</td><td>Day 4 (auto-release)</td></tr>
+          <tr><td><b>Naxos Hotel (Ξενοδόχος)</b></td><td>€10,00</td><td>4,5%</td><td>15 / 1 του μήνα</td></tr>
+          <tr><td><b>JMK Platform</b></td><td>€26,95</td><td>12,3%</td><td>Άμεσα</td></tr>
+          <tr><td>Stripe fees</td><td>€3,05</td><td>1,4%</td><td>Άμεσα</td></tr>
+          <tr><td>Reserve/Refunds</td><td>€4,00</td><td>1,8%</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <p>Mockups · έκδοση 1.0 · Απρίλιος 2026 · JMK App<br>
+  Όλα τα στοιχεία (ονόματα, ποσά, ξενοδοχεία, συνεργάτες) είναι ενδεικτικά και χρησιμοποιούνται μόνο για την εικαστική παρουσίαση.</p>
+</div>
+
+<script>
+  document.querySelectorAll('.nav button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('section').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById(b.dataset.target).classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+</script>
+</body>
+</html>

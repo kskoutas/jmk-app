@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<title>JMK · Συνεργάτης</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F4C5C">
+<style>
+  :root{
+    --accent:#0F4C5C; --accent2:#5F8A8B; --accent-bg:#E8F1F2;
+    --gold:#C49A6C; --gold-bg:#FBF1E5;
+    --bg:#F7F9FA; --ink:#1A1A1A; --muted:#6B7B82; --border:#E1E7EA;
+    --green:#2E7D32; --red:#B23A3A; --warn:#D9842F;
+    --shadow:0 4px 18px rgba(0,0,0,.06);
+    --shadow-lg:0 18px 50px rgba(0,0,0,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0F4C5C;color:var(--ink);min-height:100vh}
+  button,input,textarea,select{font-family:inherit}
+
+  .stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:linear-gradient(135deg,#0F4C5C 0%,#5F8A8B 60%,#C49A6C 100%)}
+  .phone{background:#1a1a1a;border-radius:38px;padding:10px;box-shadow:var(--shadow-lg);width:100%;max-width:420px}
+  .phone-screen{background:#fff;border-radius:30px;overflow:hidden;height:780px;display:flex;flex-direction:column;position:relative}
+  .phone-notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:24px;background:#1a1a1a;border-radius:0 0 16px 16px;z-index:50}
+  .status-bar{height:38px;color:var(--ink);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;padding:10px 22px 0;flex-shrink:0}
+  @media(max-width:480px){
+    body{background:#fff}
+    .stage{padding:0;background:#fff}
+    .phone{border-radius:0;padding:0;max-width:none}
+    .phone-screen{border-radius:0;height:100vh}
+    .phone-notch{display:none}
+    .status-bar{display:none}
+  }
+
+  .app-header{padding:6px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);min-height:56px;flex-shrink:0;gap:10px}
+  .app-title{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.3px}
+  .app-icon-btn{width:36px;height:36px;border-radius:10px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:16px;cursor:pointer;border:none;flex-shrink:0;transition:transform .12s}
+  .app-icon-btn:active{transform:scale(.94)}
+  .app-icon-btn.solid{background:var(--accent);color:#fff}
+  .app-body{flex:1;overflow-y:auto;padding:14px 18px 88px;-webkit-overflow-scrolling:touch}
+  .app-body::-webkit-scrollbar{width:0}
+  .app-body.no-pad{padding:0 0 88px}
+  .app-tabbar{position:absolute;left:0;right:0;bottom:0;height:64px;border-top:1px solid var(--border);display:flex;background:#fff;padding-bottom:env(safe-area-inset-bottom)}
+  .app-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--muted);font-weight:600;cursor:pointer;gap:2px;padding:8px 0}
+  .app-tab.active{color:var(--accent)}
+  .tab-icon{font-size:20px;line-height:1}
+  .tab-badge{background:var(--red);color:#fff;border-radius:8px;padding:1px 6px;font-size:9px;margin-left:3px;font-weight:700}
+
+  .screen{display:none;height:100%;flex-direction:column}
+  .screen.active{display:flex}
+
+  h1.h{font-size:22px;font-weight:800;letter-spacing:-.4px;margin:6px 0 4px}
+  h2.h{font-size:20px;font-weight:800;margin:8px 0 12px}
+  h3.h{font-size:16px;font-weight:700;margin:14px 0 10px}
+  .small{font-size:12px;color:var(--muted);line-height:1.45}
+
+  .pill{display:inline-flex;align-items:center;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-bg);color:var(--accent);cursor:pointer;border:1.5px solid transparent;transition:all .15s}
+  .pill.gold{background:var(--gold-bg);color:var(--gold)}
+  .pill.green{background:#E5F4E5;color:var(--green)}
+  .pill.warn{background:#FBEDD9;color:var(--warn)}
+  .pill.red{background:#F8E0E0;color:var(--red)}
+  .pill.outline{background:#fff;border-color:var(--border);color:var(--muted)}
+  .pill.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;background:var(--accent);color:#fff;border-radius:12px;font-weight:700;font-size:14px;border:none;width:100%;cursor:pointer;transition:opacity .15s}
+  .btn:active{opacity:.85}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.outline{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+  .btn.gold{background:var(--gold)}
+  .btn.danger{background:var(--red)}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;background:#fff;margin-bottom:10px;transition:border-color .15s}
+  .input:focus{outline:none;border-color:var(--accent)}
+  textarea.input{resize:none;font-family:inherit}
+  .label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stack{display:flex;flex-direction:column;gap:10px}
+
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+
+  /* Hero card / earnings */
+  .hero-card{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:18px 20px;border-radius:18px;margin-bottom:14px;position:relative;overflow:hidden}
+  .hero-card::before{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 70%);border-radius:50%}
+  .hero-card.gold{background:linear-gradient(135deg,var(--gold),#A07A52)}
+  .hero-card .h{font-size:30px;font-weight:800;margin:0 0 4px;letter-spacing:-.4px;position:relative}
+  .hero-card .s{font-size:13px;opacity:.92;position:relative}
+
+  /* Activity (listing) card */
+  .activity-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;margin-bottom:12px;cursor:pointer}
+  .activity-image{height:90px;background:linear-gradient(120deg,#5F8A8B,#0F4C5C);display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;position:relative}
+  .activity-image .stat-pill{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .activity-image.beach{background:linear-gradient(120deg,#86C5DA,#5085A5)}
+  .activity-image.taverna{background:linear-gradient(120deg,#C49A6C,#8B5E34)}
+  .activity-image.hike{background:linear-gradient(120deg,#7FA068,#445D38)}
+  .activity-image.sunset{background:linear-gradient(120deg,#E89B6C,#C04A5C)}
+  .activity-image.dive{background:linear-gradient(120deg,#3D89A1,#0A2D40)}
+  .activity-info{padding:12px 14px}
+  .activity-info .t{font-size:14px;font-weight:700;margin-bottom:4px}
+  .activity-info .d{font-size:11.5px;color:var(--muted);margin-bottom:8px;line-height:1.4}
+  .activity-meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
+
+  /* Chat list (conversations overview) */
+  .conv-row{display:flex;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;align-items:center;background:#fff}
+  .conv-row.unread{background:linear-gradient(90deg,var(--accent-bg),#fff)}
+  .conv-row .av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+  .conv-row .info{flex:1;min-width:0}
+  .conv-row .top{display:flex;justify-content:space-between;align-items:baseline}
+  .conv-row .top b{font-size:14px}
+  .conv-row .top .time{font-size:10.5px;color:var(--muted)}
+  .conv-row .preview{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .conv-row.unread .preview{color:var(--ink);font-weight:600}
+  .conv-row .badge{background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-left:6px}
+
+  /* Chat thread */
+  .chat-list{display:flex;flex-direction:column;gap:10px;padding:14px 14px 8px}
+  .msg{max-width:82%;padding:10px 13px;border-radius:16px;font-size:13.5px;line-height:1.45;word-wrap:break-word}
+  .msg.them{background:#F0F2F4;align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.me{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .msg.system{background:#FBEDD9;color:#7A4D14;align-self:center;font-size:11.5px;text-align:center;border-radius:10px;padding:7px 12px;max-width:90%;font-weight:600}
+  .chat-meta{font-size:10px;color:var(--muted);margin-top:3px;display:block}
+  .chat-input-wrap{padding:10px 14px 12px;border-top:1px solid var(--border);background:#fff;display:flex;gap:8px;align-items:center}
+  .chat-input-wrap input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 14px;font-size:13.5px;background:var(--bg)}
+  .chat-input-wrap button{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:14px;cursor:pointer}
+
+  /* Calendar */
+  .cal-month{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px}
+  .cal-h{text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:6px 0;text-transform:uppercase}
+  .cal-cell{aspect-ratio:1;border-radius:10px;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;position:relative;border:1.5px solid transparent}
+  .cal-cell.today{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+  .cal-cell.has-booking::after{content:"";position:absolute;bottom:6px;width:5px;height:5px;background:var(--accent);border-radius:50%}
+  .cal-cell.has-booking-multi::after{background:var(--gold)}
+  .cal-cell.muted{color:var(--muted);opacity:.4}
+  .cal-cell.busy{background:var(--accent);color:#fff}
+  .cal-cell.blocked{background:#F8E0E0;color:var(--red);border-color:#F8E0E0}
+  .cal-cell.blocked::after{content:"✕";position:absolute;bottom:3px;font-size:8px;font-weight:800;color:var(--red)}
+  .cal-cell.partial{background:#FFF3E0;color:var(--warn);border-color:#FFE0B2}
+  .cal-cell.partial::after{content:"◑";position:absolute;bottom:3px;font-size:8px;color:var(--warn)}
+  .cal-cell.selected-range{background:var(--accent-bg);border-color:var(--accent)}
+  .avail-mode-toggle{display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:14px;gap:2px}
+  .avail-tab{flex:1;text-align:center;padding:8px 6px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s}
+  .avail-tab.active{background:#fff;color:var(--accent);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+  .block-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:8px}
+  .block-row .info .t{font-size:13px;font-weight:700}
+  .block-row .info .d{font-size:11px;color:var(--muted)}
+  .toggle-sm{width:40px;height:22px;border-radius:999px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+  .toggle-sm.on{background:var(--green)}
+  .toggle-sm::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  .toggle-sm.on::after{transform:translateX(18px)}
+  .avail-quick-btns{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .avail-quick-btn{padding:7px 12px;border-radius:10px;background:var(--bg);border:1.5px solid var(--border);font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap}
+
+  /* Stats grid */
+  .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
+  .stat .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .stat .val{font-size:20px;font-weight:800;color:var(--accent);margin-top:4px}
+  .stat .delta{font-size:11px;color:var(--green);margin-top:2px;font-weight:600}
+  .stat.gold .val{color:var(--gold)}
+  .stat.warn .val{color:var(--warn)}
+  .stat.red .val{color:var(--red)}
+
+  /* Upload media grid */
+  .media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  .media-tile{aspect-ratio:1;background:linear-gradient(120deg,#5F8A8B,#0F4C5C);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;cursor:pointer;position:relative;overflow:hidden}
+  .media-tile.add{background:#fff;color:var(--muted);border:2px dashed var(--border);font-size:30px}
+  .media-tile.add:hover{border-color:var(--accent);color:var(--accent)}
+  .media-tile .x{position:absolute;top:4px;right:4px;width:18px;height:18px;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center}
+
+  /* Stepper */
+  .stepper{display:flex;gap:6px;padding:10px 18px 0}
+  .stepper .step{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .25s}
+  .stepper .step.active{background:var(--accent)}
+
+  /* Booking timeline */
+  .timeline{position:relative;padding-left:22px;margin-top:6px}
+  .timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--border)}
+  .tl-item{position:relative;margin-bottom:14px;padding-bottom:6px}
+  .tl-item::before{content:"";position:absolute;left:-18px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 0 0 2px var(--accent-bg)}
+  .tl-item.done::before{background:var(--green);box-shadow:0 0 0 2px #C8E6C9}
+  .tl-item.pending::before{background:#fff;border:2px solid var(--border);box-shadow:none}
+  .tl-time{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .tl-title{font-size:13.5px;font-weight:700;margin:2px 0}
+  .tl-desc{font-size:11.5px;color:var(--muted);line-height:1.4}
+
+  /* Anti-bypass alert */
+  .alert{background:#FBEDD9;border-left:4px solid var(--warn);padding:11px 13px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#7A4D14;line-height:1.4}
+  .alert b{color:var(--warn)}
+  .alert.green{background:#E5F4E5;border-left-color:var(--green);color:#1B5E20}
+  .alert.green b{color:var(--green)}
+  .alert.blue{background:var(--accent-bg);border-left-color:var(--accent);color:var(--accent)}
+  .alert.blue b{color:var(--accent)}
+
+  /* Toast */
+  .toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,80px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;opacity:0;pointer-events:none;transition:all .25s;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:90%;text-align:center}
+  .toast.show{transform:translate(-50%,0);opacity:1}
+  .toast.error{background:var(--red)}
+  .toast.success{background:var(--green)}
+
+  /* Modal */
+  .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:80}
+  .modal-bg.show{display:flex;animation:fadeIn .2s}
+  .modal{background:#fff;border-radius:22px 22px 0 0;padding:22px 22px 26px;width:100%;max-height:88%;overflow-y:auto;animation:slideUp .25s;position:relative}
+  .modal h3{margin:0 0 6px;font-size:18px;font-weight:800}
+  .modal .x{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);font-size:18px;cursor:pointer}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+  .row-between{display:flex;justify-content:space-between;align-items:center}
+  .divider{height:1px;background:var(--border);margin:14px 0}
+
+  /* QR scanner */
+  .scanner-frame{position:relative;height:300px;background:linear-gradient(135deg,#1a1a1a,#333);border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff}
+  .scanner-frame .target{width:200px;height:200px;border:3px solid var(--gold);border-radius:18px;position:relative}
+  .scanner-frame .laser{position:absolute;left:0;right:0;height:2px;background:var(--gold);box-shadow:0 0 10px var(--gold);animation:scan 2s infinite}
+  @keyframes scan{0%{top:0}50%{top:calc(100% - 2px)}100%{top:0}}
+
+  /* Chart */
+  .chart{height:120px;display:flex;align-items:flex-end;gap:6px;padding:6px 0}
+  .bar{flex:1;background:linear-gradient(to top,var(--accent) 0%,var(--accent2) 100%);border-radius:4px 4px 0 0;min-height:8px}
+  .bar.gold{background:linear-gradient(to top,var(--gold) 0%,#E2BD96 100%)}
+
+  /* Auth */
+  .auth-screen{flex:1;display:flex;flex-direction:column;background:linear-gradient(170deg,#0F4C5C 0%,#5F8A8B 60%,#fff 60.5%,#fff 100%);padding:40px 24px 24px}
+  .auth-card{background:#fff;border-radius:20px;padding:28px 22px;box-shadow:var(--shadow-lg);margin-top:20px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:20px;color:#fff}
+  .brand-mark{width:42px;height:42px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:-.5px;color:#fff}
+  .brand-name{font-size:22px;font-weight:800;letter-spacing:-.5px}
+
+  /* Pulse */
+  @keyframes pulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+  .pulse{animation:pulse 1.6s ease-in-out infinite}
+
+  /* Toggle */
+  .toggle{width:44px;height:26px;background:#D5DBDD;border-radius:14px;position:relative;cursor:pointer;flex-shrink:0;transition:background .15s}
+  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s}
+  .toggle.on{background:var(--accent)}
+  .toggle.on::after{left:20px}
+
+  /* Settings rows */
+  .setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .setting-row:last-child{border-bottom:none}
+  .setting-label{font-size:14px;font-weight:600}
+  .setting-desc{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  /* Booking row */
+  .booking-row{display:flex;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:#fff;cursor:pointer;align-items:center}
+  .booking-icon{width:46px;height:46px;border-radius:10px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .booking-row .info{flex:1;min-width:0}
+  .booking-row .t{font-size:13.5px;font-weight:700;margin-bottom:2px}
+  .booking-row .d{font-size:11.5px;color:var(--muted)}
+
+  /* Seg */
+  .seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:14px}
+  .seg-btn{flex:1;padding:8px;font-size:12px;font-weight:700;border-radius:9px;text-align:center;color:var(--muted);cursor:pointer}
+  .seg-btn.active{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+</style>
+</head>
+<body>
+
+<div class="stage">
+<div class="phone"><div class="phone-screen">
+  <div class="phone-notch"></div>
+  <div class="status-bar"><span id="clock">9:41</span><span>● ● ●</span></div>
+
+  <!-- ============ SCREEN: SPLASH / WELCOME ============ -->
+  <div class="screen active" id="s-welcome">
+    <div class="auth-screen">
+      <div class="brand">
+        <div class="brand-mark">J</div>
+        <div class="brand-name">JMK · Partners</div>
+      </div>
+      <h1 style="color:#fff;font-size:28px;font-weight:800;margin:30px 0 6px;letter-spacing:-.5px">Πούλα τις εμπειρίες σου<br>χωρίς προμηθευτές μεσάζοντες.</h1>
+      <p style="color:rgba(255,255,255,.92);font-size:14px;line-height:1.5;margin:0 0 20px">Δέξου κρατήσεις απευθείας από επισκέπτες ξενοδοχείων στην Νάξο, Πάρο, Σαντορίνη και 12 ακόμη ελληνικά νησιά.</p>
+
+      <div class="auth-card">
+        <h3 style="margin:0 0 6px;font-size:18px;font-weight:800">Καλώς ήρθες</h3>
+        <p class="small" style="margin:0 0 18px">Σύνδεση με τα στοιχεία του συνεργάτη</p>
+        <label class="label">Email</label>
+        <input class="input" id="loginEmail" placeholder="captain@example.gr" value="niko@captainNiko.gr"/>
+        <label class="label">Κωδικός</label>
+        <input class="input" type="password" id="loginPass" value="••••••••"/>
+        <div class="row-between" style="margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><input type="checkbox" checked> Να με θυμάσαι</label>
+          <a class="small" style="color:var(--accent);font-weight:600;cursor:pointer">Ξέχασα κωδικό</a>
+        </div>
+        <button class="btn" onclick="doLogin()">Σύνδεση →</button>
+        <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted)">
+          Δεν έχεις λογαριασμό; <a style="color:var(--accent);font-weight:700;cursor:pointer" onclick="goto('s-signup1')">Εγγραφή</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: SIGNUP 1 ============ -->
+  <div class="screen" id="s-signup1">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-welcome')">←</button>
+      <div class="app-title">Εγγραφή Συνεργάτη</div>
+      <div class="small">1/3</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step"></div><div class="step"></div></div>
+    <div class="app-body">
+      <h1 class="h">Πες μας για εσένα</h1>
+      <p class="small" style="margin:0 0 16px">Στοιχεία επικοινωνίας — τα χρειαζόμαστε για επιβεβαίωση και πληρωμές.</p>
+
+      <label class="label">Ονοματεπώνυμο</label>
+      <input class="input" placeholder="Νίκος Μαρινάκης"/>
+      <label class="label">Email</label>
+      <input class="input" type="email" placeholder="captain@example.gr"/>
+      <label class="label">Τηλέφωνο</label>
+      <input class="input" type="tel" placeholder="+30 694 ..."/>
+      <label class="label">Νησί / Περιοχή</label>
+      <select class="input">
+        <option>Νάξος</option><option>Πάρος</option><option>Σαντορίνη</option><option>Μύκονος</option><option>Άλλη Κυκλάδα</option>
+      </select>
+
+      <button class="btn" style="margin-top:14px" onclick="goto('s-signup2')">Συνέχεια →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: SIGNUP 2 — Business ============ -->
+  <div class="screen" id="s-signup2">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-signup1')">←</button>
+      <div class="app-title">Εγγραφή Συνεργάτη</div>
+      <div class="small">2/3</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step active"></div><div class="step"></div></div>
+    <div class="app-body">
+      <h1 class="h">Επαγγελματικά στοιχεία</h1>
+      <p class="small" style="margin:0 0 16px">Όλοι οι συνεργάτες περνούν KYC έλεγχο. Τα στοιχεία είναι private.</p>
+
+      <label class="label">Επωνυμία / Όνομα Επιχείρησης</label>
+      <input class="input" placeholder="Captain Niko Cruises"/>
+      <label class="label">ΑΦΜ</label>
+      <input class="input" placeholder="123456789"/>
+      <label class="label">Κατηγορία</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="pill selected">⛵ Boat trips</span>
+        <span class="pill">🍴 Εστίαση</span>
+        <span class="pill">🏛 Tours</span>
+        <span class="pill">🛵 Ενοικιάσεις</span>
+        <span class="pill">🍕 Delivery</span>
+        <span class="pill">🎨 Workshops</span>
+      </div>
+      <label class="label">IBAN πληρωμών</label>
+      <input class="input" placeholder="GR16 ..."/>
+      <label class="label">Ασφάλεια / Πιστοποιητικά</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="pill outline">📎 Άδεια ναυάρχου.pdf</span>
+        <span class="pill outline">📎 Ασφαλιστήριο.pdf</span>
+        <span class="pill" style="background:#fff;border:1.5px dashed var(--border);color:var(--muted)">+ Προσθήκη</span>
+      </div>
+
+      <button class="btn" style="margin-top:18px" onclick="goto('s-signup3')">Συνέχεια →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: SIGNUP 3 — Confirm ============ -->
+  <div class="screen" id="s-signup3">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-signup2')">←</button>
+      <div class="app-title">Εγγραφή Συνεργάτη</div>
+      <div class="small">3/3</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step active"></div><div class="step active"></div></div>
+    <div class="app-body">
+      <h1 class="h">Έλεγξε τα στοιχεία σου</h1>
+      <p class="small" style="margin:0 0 14px">Στείλε για έγκριση — θα ενημερωθείς εντός 24-48 ωρών.</p>
+
+      <div class="card">
+        <div class="row-between" style="margin-bottom:6px"><span class="small">Ονοματεπώνυμο</span><b>Νίκος Μαρινάκης</b></div>
+        <div class="row-between" style="margin-bottom:6px"><span class="small">Email</span><b>niko@captainNiko.gr</b></div>
+        <div class="row-between" style="margin-bottom:6px"><span class="small">Νησί</span><b>Νάξος</b></div>
+        <div class="divider"></div>
+        <div class="row-between" style="margin-bottom:6px"><span class="small">Επωνυμία</span><b>Captain Niko Cruises</b></div>
+        <div class="row-between" style="margin-bottom:6px"><span class="small">ΑΦΜ</span><b>123456789</b></div>
+        <div class="row-between" style="margin-bottom:6px"><span class="small">Κατηγορία</span><b>⛵ Boat trips</b></div>
+      </div>
+
+      <div class="alert blue" style="margin:0 0 14px"><b>JMK Partner Agreement:</b> Προμήθεια 12-15% επί GMV. Eκκαθάριση 24h μετά την δραστηριότητα. Δωρεάν ακυρώσεις 24h πριν.</div>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.45;color:var(--muted);margin-bottom:14px"><input type="checkbox" checked style="margin-top:3px"> Αποδέχομαι τους <a style="color:var(--accent);font-weight:600">Όρους Συνεργασίας</a> και την <a style="color:var(--accent);font-weight:600">Πολιτική Απορρήτου</a></label>
+
+      <button class="btn gold" onclick="completeSignup()">📤 Στείλε για έγκριση</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: HOME / LISTINGS ============ -->
+  <div class="screen" id="s-home">
+    <div class="app-header">
+      <div class="app-title">Οι Δραστηριότητές μου</div>
+      <button class="app-icon-btn solid" onclick="goto('s-new1')">+</button>
+    </div>
+    <div class="app-body">
+      <div class="hero-card">
+        <div class="h">€8.420</div>
+        <div class="s">Έσοδα Ιουλίου · 38 κρατήσεις · μ.ο. €222</div>
+        <div style="display:flex;gap:14px;margin-top:14px;font-size:11.5px">
+          <div><b style="font-size:14px">▲ €1.840</b><div style="opacity:.85">vs Ιουν</div></div>
+          <div><b style="font-size:14px">⭐ 4.8</b><div style="opacity:.85">Rating</div></div>
+          <div><b style="font-size:14px">12d</b><div style="opacity:.85">Εκκαθάριση</div></div>
+        </div>
+      </div>
+
+      <div class="alert green"><b>🆕 3 νέες κρατήσεις σήμερα</b> · Τσέκαρε το Calendar.</div>
+
+      <div class="row-between" style="margin:6px 0 10px">
+        <h3 class="h" style="margin:0">Listings (3)</h3>
+        <a class="small" style="color:var(--accent);font-weight:700;cursor:pointer" onclick="goto('s-new1')">+ Νέα</a>
+      </div>
+
+      <div class="activity-card" onclick="goto('s-listing-detail')">
+        <div class="activity-image"><span>⛵</span><span class="stat-pill">€110/άτομο</span></div>
+        <div class="activity-info">
+          <div class="t">Day Cruise προς Παναγιά</div>
+          <div class="d">6 ώρες · 8 άτομα · με γεύμα + transfer</div>
+          <div class="activity-meta">
+            <span class="pill green">● Ενεργό</span>
+            <span>⭐ 4.9 · 22 κρατήσεις · €4.840</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="activity-card sunset" onclick="goto('s-listing-detail')">
+        <div class="activity-image sunset"><span>🌅</span><span class="stat-pill">€70/άτομο</span></div>
+        <div class="activity-info">
+          <div class="t">Sunset Cruise</div>
+          <div class="d">3 ώρες · 6 άτομα · Σαμπάνια &amp; finger food</div>
+          <div class="activity-meta">
+            <span class="pill green">● Ενεργό</span>
+            <span>⭐ 4.8 · 14 κρατήσεις · €2.940</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="activity-card" onclick="goto('s-listing-detail')">
+        <div class="activity-image dive"><span>🤿</span><span class="stat-pill">€55/άτομο</span></div>
+        <div class="activity-info">
+          <div class="t">Half-day Snorkeling</div>
+          <div class="d">3 ώρες · 6 άτομα · Εξοπλισμός included</div>
+          <div class="activity-meta">
+            <span class="pill warn">● Σε αναμονή</span>
+            <span>2 reviews σε εκκρεμότητα</span>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="h" style="margin-top:18px">📊 Trend (8 εβδομάδες)</h3>
+      <div class="card">
+        <div class="chart">
+          <div class="bar" style="height:25%"></div>
+          <div class="bar" style="height:38%"></div>
+          <div class="bar" style="height:50%"></div>
+          <div class="bar" style="height:48%"></div>
+          <div class="bar" style="height:68%"></div>
+          <div class="bar gold" style="height:80%"></div>
+          <div class="bar gold" style="height:88%"></div>
+          <div class="bar gold" style="height:95%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+          <span>5 Μάι</span><span>Ιούν</span><span>Ιούλ</span>
+        </div>
+      </div>
+    </div>
+    <div class="app-tabbar">
+      <div class="app-tab active" onclick="goto('s-home')"><div class="tab-icon">◉</div>Listings</div>
+      <div class="app-tab" onclick="goto('s-calendar')"><div class="tab-icon">◷</div>Ημερολόγιο</div>
+      <div class="app-tab" onclick="goto('s-chats')"><div class="tab-icon">💬</div>Chat <span class="tab-badge">3</span></div>
+      <div class="app-tab" onclick="goto('s-earnings')"><div class="tab-icon">€</div>Έσοδα</div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: NEW LISTING — Step 1 ============ -->
+  <div class="screen" id="s-new1">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-home')">←</button>
+      <div class="app-title">Νέα Δραστηριότητα</div>
+      <div class="small">1/4</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div></div>
+    <div class="app-body">
+      <h1 class="h">Τι προσφέρεις;</h1>
+      <p class="small" style="margin:0 0 14px">Δώσε μια ξεκάθαρη περιγραφή — οι επισκέπτες αποφασίζουν με βάση τίτλο &amp; φωτογραφίες.</p>
+
+      <label class="label">Κατηγορία</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="pill selected">⛵ Boat</span>
+        <span class="pill">🤿 Snorkel</span>
+        <span class="pill">🌅 Sunset</span>
+        <span class="pill">🍴 Φαγητό</span>
+        <span class="pill">🏛 Tour</span>
+      </div>
+      <label class="label">Τίτλος</label>
+      <input class="input" value="Day Cruise προς Παναγιά"/>
+      <label class="label">Σύντομη περιγραφή</label>
+      <textarea class="input" rows="3">Ολοήμερη κρουαζιέρα στις νότιες παραλίες με γεύμα &amp; snorkeling.</textarea>
+
+      <button class="btn" style="margin-top:14px" onclick="goto('s-new2')">Συνέχεια →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: NEW LISTING — Step 2 (Media) ============ -->
+  <div class="screen" id="s-new2">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-new1')">←</button>
+      <div class="app-title">Νέα Δραστηριότητα</div>
+      <div class="small">2/4</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step active"></div><div class="step"></div><div class="step"></div></div>
+    <div class="app-body">
+      <h1 class="h">Φωτογραφίες &amp; Λεπτομέρειες</h1>
+      <p class="small" style="margin:0 0 14px">Πρώτη φωτογραφία = εξώφυλλο. Πρόσθεσε 3-8 φωτό.</p>
+
+      <label class="label">Φωτογραφίες &amp; Βίντεο</label>
+      <div class="media-grid">
+        <div class="media-tile" style="background:linear-gradient(120deg,#5F8A8B,#0F4C5C)">📷<span class="x">×</span></div>
+        <div class="media-tile" style="background:linear-gradient(120deg,#86C5DA,#5085A5)">📹<span class="x">×</span></div>
+        <div class="media-tile" style="background:linear-gradient(120deg,#7FA068,#445D38)">📷<span class="x">×</span></div>
+        <div class="media-tile" style="background:linear-gradient(120deg,#E89B6C,#C04A5C)">📷<span class="x">×</span></div>
+        <div class="media-tile add" onclick="toast('Άνοιγμα κάμερας…','success')">+</div>
+        <div class="media-tile add" onclick="toast('Επιλογή από gallery…','success')">📁</div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px">
+        <div>
+          <label class="label">Διάρκεια</label>
+          <input class="input" value="6 ώρες"/>
+        </div>
+        <div>
+          <label class="label">Max άτομα</label>
+          <input class="input" value="8"/>
+        </div>
+      </div>
+      <label class="label">Τιμή ανά άτομο (€)</label>
+      <input class="input" value="110"/>
+      <label class="label">Συμπεριλαμβάνεται</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="pill selected">🍽 Γεύμα</span>
+        <span class="pill selected">🤿 Snorkel</span>
+        <span class="pill selected">🚖 Transfer</span>
+        <span class="pill">🍷 Ποτά</span>
+        <span class="pill">📸 Φωτογραφίες</span>
+        <span class="pill">+ Άλλο</span>
+      </div>
+
+      <button class="btn" style="margin-top:14px" onclick="goto('s-new3')">Συνέχεια →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: NEW LISTING — Step 3 (Availability/Weather) ============ -->
+  <div class="screen" id="s-new3">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-new2')">←</button>
+      <div class="app-title">Νέα Δραστηριότητα</div>
+      <div class="small">3/4</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step active"></div><div class="step active"></div><div class="step"></div></div>
+    <div class="app-body">
+      <h1 class="h">Διαθεσιμότητα &amp; Καιρός</h1>
+      <p class="small" style="margin:0 0 14px">Πες μας πότε τρέχει η δραστηριότητα και πότε ΔΕΝ τρέχει με βάση καιρό.</p>
+
+      <label class="label">Ημέρες που τρέχει</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="pill selected">Δευ</span><span class="pill selected">Τρι</span><span class="pill selected">Τετ</span>
+        <span class="pill selected">Πεμ</span><span class="pill selected">Παρ</span><span class="pill selected">Σαβ</span>
+        <span class="pill">Κυρ</span>
+      </div>
+      <label class="label">Ώρα αναχώρησης</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="pill selected">10:00</span><span class="pill">14:00</span>
+        <span class="pill outline">+ Νέα</span>
+      </div>
+
+      <label class="label">Προϋποθέσεις καιρού</label>
+      <p class="small" style="margin:0 0 8px">Εάν δεν πληρούνται, η δραστηριότητα ΔΕΝ προτείνεται και ΔΕΝ μπορεί να γίνει κράτηση.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="pill selected">💨 Άνεμος &lt; 30 km/h</span>
+        <span class="pill selected">☔ Όχι βροχή</span>
+        <span class="pill">🌊 Κύμα &lt; 1m</span>
+        <span class="pill">🌡 Θερμ &gt; 20°C</span>
+        <span class="pill" style="background:#fff;border:1.5px dashed var(--border);color:var(--muted)">+ Προσθήκη</span>
+      </div>
+
+      <div class="alert blue" style="margin-top:18px"><b>Auto-cancel:</b> Αν 24h πριν δεν πληρούνται οι προϋποθέσεις, η JMK ακυρώνει αυτόματα και επιστρέφει τα χρήματα.</div>
+
+      <button class="btn" style="margin-top:6px" onclick="goto('s-new4')">Συνέχεια →</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: NEW LISTING — Step 4 (Review) ============ -->
+  <div class="screen" id="s-new4">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-new3')">←</button>
+      <div class="app-title">Νέα Δραστηριότητα</div>
+      <div class="small">4/4</div>
+    </div>
+    <div class="stepper"><div class="step active"></div><div class="step active"></div><div class="step active"></div><div class="step active"></div></div>
+    <div class="app-body">
+      <h1 class="h">Δες πώς φαίνεται</h1>
+      <p class="small" style="margin:0 0 14px">Αυτή η εικόνα θα δουν οι επισκέπτες.</p>
+
+      <div class="activity-card">
+        <div class="activity-image" style="height:160px;font-size:50px"><span>⛵</span><span class="stat-pill">€110/άτομο</span></div>
+        <div class="activity-info">
+          <div class="t">Day Cruise προς Παναγιά</div>
+          <div class="d">6 ώρες · 8 άτομα · με γεύμα &amp; snorkel</div>
+          <div class="activity-meta"><span class="small">⭐ Νέο · Captain Niko</span><span class="pill green">Διαθέσιμο</span></div>
+        </div>
+      </div>
+
+      <div class="alert green"><b>✓ Όλα έτοιμα.</b> Μόλις πατήσεις «Δημοσίευση», θα εμφανίζεται στους επισκέπτες των 14 συνεργαζόμενων ξενοδοχείων στη Νάξο.</div>
+
+      <button class="btn gold" onclick="publishListing()">🚀 Δημοσίευση</button>
+      <button class="btn outline" style="margin-top:8px" onclick="toast('Αποθηκεύτηκε ως draft','success')">💾 Αποθήκευση ως draft</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: LISTING DETAIL ============ -->
+  <div class="screen" id="s-listing-detail">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-home')">←</button>
+      <div class="app-title">Day Cruise</div>
+      <button class="app-icon-btn">⋯</button>
+    </div>
+    <div class="app-body no-pad">
+      <div class="activity-image" style="height:200px;font-size:80px"><span>⛵</span><span class="stat-pill">€110/άτομο</span></div>
+
+      <div style="padding:16px 18px">
+        <div class="row-between">
+          <h2 class="h" style="margin:0">Day Cruise προς Παναγιά</h2>
+          <span class="pill green">● Ενεργό</span>
+        </div>
+        <div class="small" style="margin-bottom:14px">⭐ 4.9 · 22 κρατήσεις τον Ιούλιο · €4.840 GMV</div>
+
+        <div class="stats-grid">
+          <div class="stat"><div class="lbl">Views</div><div class="val">1.420</div><div class="delta">▲ 28%</div></div>
+          <div class="stat gold"><div class="lbl">Conversion</div><div class="val">8,2%</div><div class="delta">▲ 1,4 pp</div></div>
+          <div class="stat"><div class="lbl">Avg πελάτες</div><div class="val">2,3</div><div class="delta">/ booking</div></div>
+          <div class="stat warn"><div class="lbl">Cancel rate</div><div class="val">3%</div><div class="delta">▼ 2 pp</div></div>
+        </div>
+
+        <h3 class="h" style="font-size:14px">Επόμενες κρατήσεις</h3>
+        <div class="booking-row" onclick="goto('s-booking-detail')">
+          <div class="booking-icon">⛵</div>
+          <div class="info"><div class="t">Maria K. · 2 άτομα</div><div class="d">17 Ιουλ · 10:00 · Naxos Boutique</div></div>
+          <span class="pill green">Confirmed</span>
+        </div>
+        <div class="booking-row">
+          <div class="booking-icon">⛵</div>
+          <div class="info"><div class="t">Sven L. · 4 άτομα</div><div class="d">18 Ιουλ · 10:00 · Hotel Argo</div></div>
+          <span class="pill green">Confirmed</span>
+        </div>
+        <div class="booking-row">
+          <div class="booking-icon">⛵</div>
+          <div class="info"><div class="t">Famille D. · 3 άτομα</div><div class="d">20 Ιουλ · 10:00 · Hotel Niko</div></div>
+          <span class="pill warn">Σε chat</span>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn outline" onclick="toast('Επεξεργασία','success')">✏ Επεξεργασία</button>
+          <button class="btn outline" style="background:#FFF8E1;color:var(--warn);border-color:var(--warn)" onclick="toast('Listing παύθηκε','success')">⏸ Παύση</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: CALENDAR ============ -->
+  <div class="screen" id="s-calendar">
+    <div class="app-header">
+      <div class="app-title">Ημερολόγιο</div>
+      <button class="app-icon-btn" onclick="openModal('blockRangeModal')">＋ Block</button>
+    </div>
+    <div class="app-body">
+
+      <!-- Mode toggle: Κρατήσεις / Διαθεσιμότητα -->
+      <div class="avail-mode-toggle">
+        <div class="avail-tab active" id="tab-bookings" onclick="calMode('bookings')">📋 Κρατήσεις</div>
+        <div class="avail-tab" id="tab-avail" onclick="calMode('avail')">🔒 Διαθεσιμότητα</div>
+      </div>
+
+      <!-- Activity selector (pill row) -->
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;scrollbar-width:none" id="activityFilter">
+        <span class="pill selected" data-act="all" onclick="filterActivity(this,'all')">Όλα</span>
+        <span class="pill" data-act="cruise" onclick="filterActivity(this,'cruise')">⛵ Day Cruise</span>
+        <span class="pill" data-act="sunset" onclick="filterActivity(this,'sunset')">🌅 Sunset</span>
+        <span class="pill" data-act="snorkel" onclick="filterActivity(this,'snorkel')">🤿 Snorkeling</span>
+      </div>
+
+      <!-- Month navigation -->
+      <div class="row-between" style="margin-bottom:10px">
+        <button class="app-icon-btn" onclick="calNav(-1)">‹</button>
+        <h2 class="h" style="margin:0" id="calMonthLabel">Ιούλιος 2026</h2>
+        <button class="app-icon-btn" onclick="calNav(1)">›</button>
+      </div>
+
+      <!-- Calendar grid -->
+      <div class="cal-month" id="calGrid">
+        <!-- rendered by JS -->
+      </div>
+
+      <!-- Legend (dynamic per mode) -->
+      <div style="display:flex;gap:12px;font-size:11px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap" id="calLegend"></div>
+
+      <!-- BOOKINGS MODE content -->
+      <div id="calBookingsContent">
+        <h3 class="h">📅 Σήμερα · Πέμπτη 17 Ιουλ</h3>
+        <div class="booking-row" onclick="goto('s-booking-detail')">
+          <div class="booking-icon">⛵</div>
+          <div class="info"><div class="t">Maria K. · Day Cruise</div><div class="d">10:00 · 2 άτομα · Naxos Boutique</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--accent)">€220</div><span class="pill green" style="font-size:9px">Έτοιμο</span></div>
+        </div>
+        <div class="booking-row">
+          <div class="booking-icon" style="background:#F8E0E0;color:#7A1A1A">🌅</div>
+          <div class="info"><div class="t">Andrea G. · Sunset Cruise</div><div class="d">19:00 · 4 άτομα · Hotel Argo</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--accent)">€280</div><span class="pill green" style="font-size:9px">Έτοιμο</span></div>
+        </div>
+        <h3 class="h" style="margin-top:14px">📅 Αύριο · Παρ 18 Ιουλ</h3>
+        <div class="booking-row">
+          <div class="booking-icon">⛵</div>
+          <div class="info"><div class="t">Sven L. · Day Cruise</div><div class="d">10:00 · 4 άτομα</div></div>
+          <span class="pill green">Confirmed</span>
+        </div>
+        <div class="booking-row">
+          <div class="booking-icon">⛵</div>
+          <div class="info"><div class="t">Ελεύθερη ημέρα</div><div class="d">Δεν υπάρχουν άλλες κρατήσεις</div></div>
+        </div>
+      </div>
+
+      <!-- AVAILABILITY MODE content -->
+      <div id="calAvailContent" style="display:none">
+        <p class="small" style="margin:0 0 12px">Πάτα σε μια ημέρα για να την <b>μπλοκάρεις</b> ή να την <b>ξεμπλοκάρεις</b>. Οι μπλοκαρισμένες μέρες δεν εμφανίζονται σε επισκέπτες.</p>
+
+        <div class="avail-quick-btns">
+          <button class="avail-quick-btn" onclick="blockWeekend()">🚫 Block Σαββατοκύριακα</button>
+          <button class="avail-quick-btn" onclick="openModal('blockRangeModal')">📅 Block εύρος ημερομηνιών</button>
+          <button class="avail-quick-btn" onclick="clearAllBlocks()">✓ Ξεμπλοκ όλα</button>
+        </div>
+
+        <!-- Per-activity slot overrides -->
+        <h3 class="h" style="margin-top:4px">Slots ανά δραστηριότητα</h3>
+        <div class="block-row">
+          <div class="info">
+            <div class="t">⛵ Day Cruise · 10:00</div>
+            <div class="d">Μέγ. 8 άτομα · Διαθέσιμο</div>
+          </div>
+          <div class="toggle-sm on" id="slot-cruise-1" onclick="toggleSlot(this,'cruise-1')"></div>
+        </div>
+        <div class="block-row">
+          <div class="info">
+            <div class="t">🌅 Sunset Cruise · 19:00</div>
+            <div class="d">Μέγ. 6 άτομα · Διαθέσιμο</div>
+          </div>
+          <div class="toggle-sm on" id="slot-sunset-1" onclick="toggleSlot(this,'sunset-1')"></div>
+        </div>
+        <div class="block-row">
+          <div class="info">
+            <div class="t">🤿 Half-day Snorkeling · 09:00</div>
+            <div class="d">Μέγ. 6 άτομα · <span style="color:var(--red);font-weight:700">Σε παύση</span></div>
+          </div>
+          <div class="toggle-sm" id="slot-snorkel-1" onclick="toggleSlot(this,'snorkel-1')"></div>
+        </div>
+
+        <!-- Max guests override -->
+        <h3 class="h" style="margin-top:4px">Μέγιστος αριθμός ατόμων (αυριανές κρατήσεις)</h3>
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700;flex:1">⛵ Day Cruise</span>
+          <button class="app-icon-btn" onclick="changeMax('cruise',-1)" style="width:28px;height:28px;font-size:18px">−</button>
+          <span style="font-size:16px;font-weight:800;width:28px;text-align:center" id="maxCruise">8</span>
+          <button class="app-icon-btn" onclick="changeMax('cruise',1)" style="width:28px;height:28px;font-size:18px">＋</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700;flex:1">🌅 Sunset Cruise</span>
+          <button class="app-icon-btn" onclick="changeMax('sunset',-1)" style="width:28px;height:28px;font-size:18px">−</button>
+          <span style="font-size:16px;font-weight:800;width:28px;text-align:center" id="maxSunset">6</span>
+          <button class="app-icon-btn" onclick="changeMax('sunset',1)" style="width:28px;height:28px;font-size:18px">＋</button>
+        </div>
+
+        <button class="btn" style="margin-top:10px" onclick="saveAvailability()">💾 Αποθήκευση αλλαγών</button>
+      </div>
+
+    </div>
+    <div class="app-tabbar">
+      <div class="app-tab" onclick="goto('s-home')"><div class="tab-icon">◉</div>Listings</div>
+      <div class="app-tab active" onclick="goto('s-calendar')"><div class="tab-icon">◷</div>Ημερολόγιο</div>
+      <div class="app-tab" onclick="goto('s-chats')"><div class="tab-icon">💬</div>Chat <span class="tab-badge">3</span></div>
+      <div class="app-tab" onclick="goto('s-earnings')"><div class="tab-icon">€</div>Έσοδα</div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Block Range ============ -->
+  <div class="modal-bg" id="blockRangeModal">
+    <div class="modal">
+      <button class="x" onclick="closeModal('blockRangeModal')">×</button>
+      <h3>🚫 Block εύρος ημερομηνιών</h3>
+      <p class="small" style="margin:0 0 14px">Επέλεξε διάστημα (π.χ. διακοπές, ρεπό, επισκευές).</p>
+
+      <label class="label">Δραστηριότητα</label>
+      <select class="input" style="margin-bottom:10px">
+        <option>Όλες οι δραστηριότητες</option>
+        <option>⛵ Day Cruise</option>
+        <option>🌅 Sunset Cruise</option>
+        <option>🤿 Snorkeling</option>
+      </select>
+
+      <div class="grid2">
+        <div>
+          <label class="label">Από</label>
+          <input type="date" class="input" id="blockFrom" value="2026-07-28">
+        </div>
+        <div>
+          <label class="label">Έως</label>
+          <input type="date" class="input" id="blockTo" value="2026-08-01">
+        </div>
+      </div>
+
+      <label class="label" style="margin-top:4px">Λόγος (προαιρετικό)</label>
+      <select class="input">
+        <option>Προσωπικές διακοπές</option>
+        <option>Συντήρηση εξοπλισμού</option>
+        <option>Εθνική αργία</option>
+        <option>Κακοκαιρία (πρόβλεψη)</option>
+        <option>Άλλο</option>
+      </select>
+
+      <div style="background:var(--accent-bg);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--accent)">
+        ℹ️ Οι ήδη επιβεβαιωμένες κρατήσεις <b>δεν επηρεάζονται</b>. Μόνο νέα αιτήματα θα απορριφθούν αυτόματα.
+      </div>
+
+      <button class="btn" onclick="confirmBlock()">Επιβεβαίωση block</button>
+      <button class="btn ghost" style="margin-top:6px" onclick="closeModal('blockRangeModal')">Άκυρο</button>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Day Detail (Availability) ============ -->
+  <div class="modal-bg" id="dayDetailModal">
+    <div class="modal">
+      <button class="x" onclick="closeModal('dayDetailModal')">×</button>
+      <h3 id="dayDetailTitle">Παρ 25 Ιουλίου 2026</h3>
+
+      <div id="dayDetailBody">
+        <div class="block-row" style="margin-bottom:8px">
+          <div class="info"><div class="t">⛵ Day Cruise · 10:00</div><div class="d">8 θέσεις διαθέσιμες</div></div>
+          <div class="toggle-sm on" onclick="this.classList.toggle('on');toast('Αποθηκεύτηκε','success')"></div>
+        </div>
+        <div class="block-row" style="margin-bottom:8px">
+          <div class="info"><div class="t">🌅 Sunset Cruise · 19:00</div><div class="d">6 θέσεις διαθέσιμες</div></div>
+          <div class="toggle-sm on" onclick="this.classList.toggle('on');toast('Αποθηκεύτηκε','success')"></div>
+        </div>
+        <div class="block-row" style="margin-bottom:14px">
+          <div class="info"><div class="t">🤿 Snorkeling · 09:00</div><div class="d">Σε παύση</div></div>
+          <div class="toggle-sm" onclick="this.classList.toggle('on');toast('Αποθηκεύτηκε','success')"></div>
+        </div>
+      </div>
+
+      <button class="btn danger" onclick="blockEntireDay()">🚫 Block ολόκληρη η μέρα</button>
+      <button class="btn ghost" style="margin-top:6px" onclick="closeModal('dayDetailModal')">Κλείσιμο</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: BOOKING DETAIL ============ -->
+  <div class="screen" id="s-booking-detail">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-calendar')">←</button>
+      <div>
+        <div class="app-title">Maria K.</div>
+        <div class="small">2 άτομα · 17 Ιουλ</div>
+      </div>
+      <button class="app-icon-btn">⋯</button>
+    </div>
+    <div class="app-body">
+      <div style="background:linear-gradient(135deg,#E5F4E5,#C8E6C9);padding:16px;border-radius:14px;margin-bottom:14px;text-align:center">
+        <div class="small" style="color:var(--green);font-weight:700">✓ Πληρώθηκε προπληρωμή</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green);margin-top:4px">€220,00</div>
+        <div class="small" style="color:#1B5E20">Συνολική τιμή · <b>€176,00</b> δικά σου μετά την δραστηριότητα</div>
+      </div>
+
+      <div class="card">
+        <div class="row-between" style="margin-bottom:6px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">M</div>
+            <div><b>Maria Konstantinou</b><div class="small">Naxos Boutique · Δωμ. 204</div></div>
+          </div>
+          <span class="pill gold">⭐ 4.9</span>
+        </div>
+        <div class="divider"></div>
+        <div class="row-between" style="margin-bottom:5px;font-size:13px"><span class="small">Δραστηριότητα</span><b>Day Cruise προς Παναγιά</b></div>
+        <div class="row-between" style="margin-bottom:5px;font-size:13px"><span class="small">Ημερομηνία</span><b>17 Ιουλ · 10:00</b></div>
+        <div class="row-between" style="margin-bottom:5px;font-size:13px"><span class="small">Άτομα</span><b>2</b></div>
+        <div class="row-between" style="margin-bottom:5px;font-size:13px"><span class="small">Pickup</span><b>09:30 · Naxos Boutique</b></div>
+      </div>
+
+      <h3 class="h">📋 Timeline</h3>
+      <div class="timeline">
+        <div class="tl-item done">
+          <div class="tl-time">17 Ιουλ · 09:30</div>
+          <div class="tl-title">Chat ξεκίνησε</div>
+          <div class="tl-desc">Maria στείλε αρχικό μήνυμα</div>
+        </div>
+        <div class="tl-item done">
+          <div class="tl-time">17 Ιουλ · 09:50</div>
+          <div class="tl-title">Συμφωνία τιμής €220</div>
+          <div class="tl-desc">Επιβεβαίωση από συν τα 2 άτομα</div>
+        </div>
+        <div class="tl-item done">
+          <div class="tl-time">17 Ιουλ · 09:51</div>
+          <div class="tl-title">Πληρωμή ολοκληρώθηκε</div>
+          <div class="tl-desc">€220,00 μέσω Visa **4242</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-time">17 Ιουλ · 10:00</div>
+          <div class="tl-title">Αναχώρηση από λιμάνι</div>
+          <div class="tl-desc">Pickup από Naxos Boutique στις 09:30</div>
+        </div>
+        <div class="tl-item pending">
+          <div class="tl-time">17 Ιουλ · 16:00</div>
+          <div class="tl-title">Ολοκλήρωση δραστηριότητας</div>
+          <div class="tl-desc">Σκάναρε QR του πελάτη</div>
+        </div>
+        <div class="tl-item pending">
+          <div class="tl-time">19 Ιουλ</div>
+          <div class="tl-title">Εκκαθάριση πληρωμής</div>
+          <div class="tl-desc">€176 στο IBAN σου</div>
+        </div>
+      </div>
+
+      <button class="btn gold" style="margin-top:8px" onclick="goto('s-scan')">📷 Σκάναρε QR πελάτη @ check-in</button>
+      <button class="btn outline" style="margin-top:8px" onclick="goto('s-chat-thread')">💬 Ανοιχτή συνομιλία</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: QR SCAN ============ -->
+  <div class="screen" id="s-scan">
+    <div class="app-header">
+      <button class="app-icon-btn" onclick="goto('s-booking-detail')">←</button>
+      <div class="app-title">QR Check-in</div>
+      <div></div>
+    </div>
+    <div class="app-body" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:30px">
+      <p class="small" style="text-align:center;margin:0 18px 18px">Σκάναρε το QR του πελάτη για να επιβεβαιώσεις την έναρξη της δραστηριότητας. Η πληρωμή κλειδώνει αυτόματα.</p>
+
+      <div class="scanner-frame" style="width:100%">
+        <div class="target">
+          <div class="laser"></div>
+        </div>
+      </div>
+
+      <div class="alert blue" style="margin-top:20px"><b>🔒 Anti-bypass:</b> Κάθε δραστηριότητα πρέπει να επιβεβαιώνεται μέσα από JMK. Έτσι παίρνεις την πληρωμή σου εγγυημένα και συνεχίζει το ranking σου να ανεβαίνει.</div>
+
+      <button class="btn gold" style="margin-top:10px" onclick="confirmScan()">✓ Manual confirm (demo)</button>
+      <button class="btn outline" style="margin-top:6px" onclick="goto('s-booking-detail')">Ακύρωση</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: CHAT INBOX ============ -->
+  <div class="screen" id="s-chats">
+    <div class="app-header">
+      <div class="app-title">Συνομιλίες</div>
+      <button class="app-icon-btn">🔍</button>
+    </div>
+    <div class="app-body no-pad">
+      <div class="seg" style="margin:14px 14px 8px">
+        <div class="seg-btn active">Όλες (12)</div>
+        <div class="seg-btn">Ενεργές</div>
+        <div class="seg-btn">Κρατημένες</div>
+      </div>
+
+      <div class="conv-row unread" onclick="goto('s-chat-thread')">
+        <div class="av">M</div>
+        <div class="info">
+          <div class="top"><b>Maria K.</b><span class="time">9:46</span></div>
+          <div class="preview">Καλημέρα Maria! Ναι έχει διαθεσιμότητα...</div>
+        </div>
+        <div class="badge">2</div>
+      </div>
+      <div class="conv-row unread" onclick="toast('Άνοιγμα chat με Sven','success')">
+        <div class="av" style="background:linear-gradient(135deg,var(--gold),#A07A52)">S</div>
+        <div class="info">
+          <div class="top"><b>Sven L.</b><span class="time">09:12</span></div>
+          <div class="preview">Hello! Is the cruise available on 18 July?</div>
+        </div>
+        <div class="badge">1</div>
+      </div>
+      <div class="conv-row" onclick="toast('Άνοιγμα chat','success')">
+        <div class="av" style="background:linear-gradient(135deg,#7B3F5C,#3D1F2E)">A</div>
+        <div class="info">
+          <div class="top"><b>Andrea G.</b><span class="time">Χθες</span></div>
+          <div class="preview">Σας ευχαριστώ πολύ — ήταν τέλεια!</div>
+        </div>
+      </div>
+      <div class="conv-row" onclick="toast('Άνοιγμα chat','success')">
+        <div class="av" style="background:linear-gradient(135deg,#7FA068,#445D38)">F</div>
+        <div class="info">
+          <div class="top"><b>Famille Dubois</b><span class="time">Χθες</span></div>
+          <div class="preview">Ok parfait, on confirme à 4 personnes.</div>
+        </div>
+      </div>
+      <div class="conv-row" onclick="toast('Άνοιγμα chat','success')">
+        <div class="av" style="background:linear-gradient(135deg,#86C5DA,#5085A5)">J</div>
+        <div class="info">
+          <div class="top"><b>Jordan T.</b><span class="time">23 Ιουν</span></div>
+          <div class="preview">Thanks for the info!</div>
+        </div>
+      </div>
+      <div class="conv-row" onclick="toast('Άνοιγμα chat','success')">
+        <div class="av" style="background:linear-gradient(135deg,#E89B6C,#C04A5C)">K</div>
+        <div class="info">
+          <div class="top"><b>Katja H.</b><span class="time">22 Ιουν</span></div>
+          <div class="preview">Σε ευχαριστούμε για την εκπληκτική μέρα!</div>
+        </div>
+      </div>
+      <div class="conv-row" onclick="toast('Άνοιγμα chat','success')">
+        <div class="av" style="background:linear-gradient(135deg,#444,#222)">R</div>
+        <div class="info">
+          <div class="top"><b>Rashid B.</b><span class="time">21 Ιουν</span></div>
+          <div class="preview">Could you also offer transfer?</div>
+        </div>
+      </div>
+    </div>
+    <div class="app-tabbar">
+      <div class="app-tab" onclick="goto('s-home')"><div class="tab-icon">◉</div>Listings</div>
+      <div class="app-tab" onclick="goto('s-calendar')"><div class="tab-icon">◷</div>Ημερολόγιο</div>
+      <div class="app-tab active"><div class="tab-icon">💬</div>Chat <span class="tab-badge">3</span></div>
+      <div class="app-tab" onclick="goto('s-earnings')"><div class="tab-icon">€</div>Έσοδα</div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: CHAT THREAD ============ -->
+  <div class="screen" id="s-chat-thread">
+    <div class="app-header" style="padding:8px 14px 12px">
+      <button class="app-icon-btn" onclick="goto('s-chats')">←</button>
+      <div style="flex:1;display:flex;gap:10px;align-items:center;cursor:pointer">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">M</div>
+        <div>
+          <div style="font-size:14px;font-weight:700">Maria Konstantinou</div>
+          <div class="small" style="color:var(--green)">● online · Naxos Boutique</div>
+        </div>
+      </div>
+      <button class="app-icon-btn" onclick="goto('s-booking-detail')">📋</button>
+    </div>
+    <div class="app-body no-pad" style="background:#FAFBFC;display:flex;flex-direction:column;padding:0">
+      <div class="chat-list" id="partnerChat">
+        <div class="msg system">Συνομιλία για το «Day Cruise · 17 Ιουλ»</div>
+        <div class="msg them">Καλημέρα! Ενδιαφέρομαι για 2 άτομα στις 17 Ιουλίου. Είναι διαθέσιμο;<span class="chat-meta">9:42</span></div>
+        <div class="msg me">Καλημέρα Maria! Ναι, έχει διαθεσιμότητα. Ώρα αναχώρησης 10:00 από το λιμάνι. Θέλετε να σας πάρουμε από το ξενοδοχείο;<span class="chat-meta" style="color:rgba(255,255,255,.7);text-align:right">9:43 ✓✓</span></div>
+        <div class="msg them">Ναι παρακαλώ. Ποια είναι η τελική τιμή;<span class="chat-meta">9:44</span></div>
+        <div class="msg me">€220 και τα δύο άτομα. Περιλαμβάνεται γεύμα + transfer.<span class="chat-meta" style="color:rgba(255,255,255,.7);text-align:right">9:45 ✓✓</span></div>
+        <div class="msg system">⚠ Ανίχνευση τηλεφώνου — μηνύματα κρύφτηκαν μέχρι την προπληρωμή</div>
+        <div class="msg me">Για να επιβεβαιώσω, πάτησε «Συμφωνώ &amp; Πλήρωσε» από κάτω 👇<span class="chat-meta" style="color:rgba(255,255,255,.7);text-align:right">9:45 ✓✓</span></div>
+        <div class="msg system" style="background:#E5F4E5;color:#1B5E20">✓ Maria πλήρωσε €220,00 · 9:51</div>
+      </div>
+    </div>
+    <div class="alert blue" style="margin:8px 14px;font-size:11.5px"><b>🔒 Anti-bypass:</b> Δεν δίνεις προσωπικά στοιχεία πριν την κράτηση. Έτσι κερδίζεις πιο γρήγορα και χωρίς ρίσκο.</div>
+    <div class="chat-input-wrap">
+      <input id="partnerInp" placeholder="Γράψε ένα μήνυμα..." onkeydown="if(event.key==='Enter')partnerSend()"/>
+      <button onclick="partnerSend()">➤</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: EARNINGS ============ -->
+  <div class="screen" id="s-earnings">
+    <div class="app-header">
+      <div class="app-title">Έσοδα</div>
+      <button class="app-icon-btn">📥</button>
+    </div>
+    <div class="app-body">
+      <div class="hero-card gold">
+        <div class="s">Σύνολο Ιουλίου</div>
+        <div class="h" style="font-size:36px">€8.420</div>
+        <div class="s">38 κρατήσεις · μ.ο. €222</div>
+      </div>
+
+      <div class="alert">
+        <b>Επόμενη εκκαθάριση:</b> <b>€1.840</b> στις 21 Ιουλ — 8 ολοκληρωμένες κρατήσεις σε αναμονή release.
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat"><div class="lbl">Συνολικά Ιουν</div><div class="val">€6.580</div><div class="delta">▲ 28%</div></div>
+        <div class="stat gold"><div class="lbl">YTD 2026</div><div class="val">€21.4K</div><div class="delta">▲ 41%</div></div>
+        <div class="stat"><div class="lbl">Conversion</div><div class="val">7,8%</div><div class="delta">▲ 1,2 pp</div></div>
+        <div class="stat warn"><div class="lbl">Cancel rate</div><div class="val">2,4%</div><div class="delta">▼ 0,8 pp</div></div>
+      </div>
+
+      <h3 class="h" style="font-size:14px">Ανά listing</h3>
+      <div class="card" style="padding:0">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+          <thead>
+            <tr style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">
+              <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)">Listing</th>
+              <th style="text-align:right;padding:10px;border-bottom:1px solid var(--border)">#</th>
+              <th style="text-align:right;padding:10px 14px;border-bottom:1px solid var(--border)">€</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:10px 14px">⛵ Day Cruise</td><td style="padding:10px;text-align:right">22</td><td style="padding:10px 14px;text-align:right;font-weight:700">€4.840</td></tr>
+            <tr><td style="padding:10px 14px;border-top:1px solid var(--border)">🌅 Sunset Cruise</td><td style="padding:10px;text-align:right;border-top:1px solid var(--border)">14</td><td style="padding:10px 14px;text-align:right;font-weight:700;border-top:1px solid var(--border)">€2.940</td></tr>
+            <tr><td style="padding:10px 14px;border-top:1px solid var(--border)">🤿 Snorkeling</td><td style="padding:10px;text-align:right;border-top:1px solid var(--border)">2</td><td style="padding:10px 14px;text-align:right;font-weight:700;border-top:1px solid var(--border)">€660</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="h" style="font-size:14px">Trend (8 εβδομάδες)</h3>
+      <div class="card">
+        <div class="chart">
+          <div class="bar" style="height:25%"></div>
+          <div class="bar" style="height:35%"></div>
+          <div class="bar" style="height:50%"></div>
+          <div class="bar" style="height:48%"></div>
+          <div class="bar" style="height:68%"></div>
+          <div class="bar gold" style="height:80%"></div>
+          <div class="bar gold" style="height:88%"></div>
+          <div class="bar gold" style="height:95%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+          <span>Μάι</span><span>Ιούν</span><span>Ιούλ</span>
+        </div>
+      </div>
+
+      <h3 class="h" style="font-size:14px">📜 Ιστορικό εκκαθαρίσεων</h3>
+      <div class="booking-row">
+        <div class="booking-icon" style="background:#E5F4E5;color:var(--green)">€</div>
+        <div class="info"><div class="t">15 Ιουλ · 7 κρατήσεις</div><div class="d">→ GR16 0110... 678</div></div>
+        <div style="text-align:right"><div style="font-weight:800;color:var(--green)">€1.628</div><span class="pill green" style="font-size:9px">Paid</span></div>
+      </div>
+      <div class="booking-row">
+        <div class="booking-icon" style="background:#E5F4E5;color:var(--green)">€</div>
+        <div class="info"><div class="t">1 Ιουλ · 12 κρατήσεις</div><div class="d">→ GR16 0110... 678</div></div>
+        <div style="text-align:right"><div style="font-weight:800;color:var(--green)">€2.340</div><span class="pill green" style="font-size:9px">Paid</span></div>
+      </div>
+      <div class="booking-row">
+        <div class="booking-icon" style="background:#FBEDD9;color:var(--warn)">⏳</div>
+        <div class="info"><div class="t">21 Ιουλ · 8 κρατήσεις</div><div class="d">→ GR16 0110... 678</div></div>
+        <div style="text-align:right"><div style="font-weight:800;color:var(--warn)">€1.840</div><span class="pill warn" style="font-size:9px">Pending</span></div>
+      </div>
+
+      <button class="btn outline" style="margin-top:10px" onclick="openModal('settingsModal')">⚙ Ρυθμίσεις πληρωμών</button>
+    </div>
+    <div class="app-tabbar">
+      <div class="app-tab" onclick="goto('s-home')"><div class="tab-icon">◉</div>Listings</div>
+      <div class="app-tab" onclick="goto('s-calendar')"><div class="tab-icon">◷</div>Ημερολόγιο</div>
+      <div class="app-tab" onclick="goto('s-chats')"><div class="tab-icon">💬</div>Chat <span class="tab-badge">3</span></div>
+      <div class="app-tab active" onclick="goto('s-earnings')"><div class="tab-icon">€</div>Έσοδα</div>
+    </div>
+  </div>
+
+  <!-- ============ Modals ============ -->
+  <div class="modal-bg" id="settingsModal">
+    <div class="modal">
+      <button class="x" onclick="closeModal('settingsModal')">×</button>
+      <h3>Ρυθμίσεις λογαριασμού</h3>
+      <p class="small" style="margin:0 0 14px">IBAN, ειδοποιήσεις, στοιχεία επιχείρησης</p>
+
+      <label class="label">IBAN</label>
+      <input class="input" value="GR16 0110 1250 0000 0001 2345 678" readonly/>
+
+      <div class="setting-row">
+        <div><div class="setting-label">Push για νέες κρατήσεις</div><div class="setting-desc">Άμεση ειδοποίηση</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">SMS εκκαθάρισης</div><div class="setting-desc">Όταν λαμβάνεις πληρωμή</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Auto-pause κακού καιρού</div><div class="setting-desc">Παύση listing όταν δεν πληρούνται conditions</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Εβδομαδιαίο report</div><div class="setting-desc">Σύνοψη κάθε Δευτέρα</div></div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+
+      <button class="btn" style="margin-top:14px" onclick="closeModal('settingsModal');toast('Αποθηκεύτηκε','success')">Αποθήκευση</button>
+      <button class="btn ghost" style="margin-top:6px;color:var(--red)" onclick="goto('s-welcome');closeModal('settingsModal')">Αποσύνδεση</button>
+    </div>
+  </div>
+
+</div></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const screens = ['s-welcome','s-signup1','s-signup2','s-signup3','s-home','s-new1','s-new2','s-new3','s-new4','s-listing-detail','s-calendar','s-booking-detail','s-scan','s-chats','s-chat-thread','s-earnings'];
+
+function goto(id){
+  screens.forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const body = document.querySelector('#'+id+' .app-body');
+  if(body) body.scrollTop = 0;
+}
+
+function doLogin(){
+  toast('Καλώς ήρθες, Captain Niko!', 'success');
+  setTimeout(() => goto('s-home'), 600);
+}
+
+function completeSignup(){
+  toast('Το αίτημά σου στάλθηκε για έγκριση', 'success');
+  setTimeout(() => goto('s-home'), 1000);
+}
+
+function publishListing(){
+  toast('Δημοσιεύτηκε ✓ Ορατό σε επισκέπτες', 'success');
+  setTimeout(() => goto('s-home'), 800);
+}
+
+function confirmScan(){
+  toast('✓ Check-in επιβεβαιώθηκε. Auto-release σε 48h.', 'success');
+  setTimeout(() => goto('s-booking-detail'), 800);
+}
+
+function partnerSend(){
+  const inp = document.getElementById('partnerInp');
+  const txt = inp.value.trim();
+  if(!txt) return;
+  const list = document.getElementById('partnerChat');
+  const m = document.createElement('div');
+  m.className = 'msg me';
+  m.innerHTML = txt + '<span class="chat-meta" style="color:rgba(255,255,255,.7);text-align:right">τώρα ✓</span>';
+  list.appendChild(m);
+  inp.value='';
+  list.parentElement.scrollTop = list.parentElement.scrollHeight;
+}
+
+// Pills behavior (toggle)
+document.querySelectorAll('.pill').forEach(p => {
+  if(p.parentElement && (p.dataset.v || p.parentElement.classList.contains('pill-group'))) return;
+  p.addEventListener('click', e => {
+    if(p.closest('.modal') || p.closest('.app-tabbar')) return;
+    p.classList.toggle('selected');
+  });
+});
+
+// Modal
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+// Toast
+let toastT = null;
+function toast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' '+type : '');
+  if(toastT) clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ---- Availability Calendar JS ----
+let calCurrentMode = 'bookings';
+let calYear = 2026, calMonth = 6; // 0-indexed: 6 = July
+let blockedDays = new Set([21,22,28,29,30]); // pre-blocked demo days
+const calMonthNames = ['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+const calMonthNamesGen = ['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];
+const bookingDays = new Set([2,4,5,7,8,10,11,12,16,17,18,19,20,22,23,25,27,29]);
+const multiBookingDays = new Set([4,8,11,16,17,23,27]);
+
+function renderCalendar(){
+  document.getElementById('calMonthLabel').textContent = calMonthNames[calMonth] + ' ' + calYear;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  // Headers
+  ['Δ','Τ','Τ','Π','Π','Σ','Κ'].forEach(d => {
+    const h = document.createElement('div'); h.className='cal-h'; h.textContent=d; grid.appendChild(h);
+  });
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const offset = (firstDay === 0) ? 6 : firstDay - 1; // Mon-based
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date(); const isCurrentMonth = today.getFullYear()===calYear && today.getMonth()===calMonth;
+
+  for(let i=0;i<offset;i++){
+    const c = document.createElement('div'); c.className='cal-cell muted';
+    c.textContent = prevDays - offset + 1 + i; grid.appendChild(c);
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const c = document.createElement('div'); c.className='cal-cell';
+    c.textContent = d;
+    if(isCurrentMonth && d===today.getDate()) c.classList.add('today');
+    if(calCurrentMode === 'bookings'){
+      if(multiBookingDays.has(d)) c.classList.add('has-booking-multi');
+      else if(bookingDays.has(d)) c.classList.add('has-booking');
+    } else {
+      if(blockedDays.has(d)) c.classList.add('blocked');
+      else if(d % 7 === 0) c.classList.add('partial'); // demo: Sundays are partial
+    }
+    c.addEventListener('click', () => onCalDayClick(d));
+    grid.appendChild(c);
+  }
+  // Fill remaining
+  const total = offset + daysInMonth; const rem = (7 - (total % 7)) % 7;
+  for(let i=1;i<=rem;i++){
+    const c = document.createElement('div'); c.className='cal-cell muted'; c.textContent=i; grid.appendChild(c);
+  }
+  renderLegend();
+}
+
+function renderLegend(){
+  const leg = document.getElementById('calLegend');
+  if(calCurrentMode === 'bookings'){
+    leg.innerHTML = '<span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);vertical-align:middle"></span> 1 κράτηση</span><span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);vertical-align:middle"></span> Πολλαπλές</span><span><span style="display:inline-block;width:7px;height:7px;border-radius:3px;background:var(--accent-bg);border:1px solid var(--accent);vertical-align:middle"></span> Σήμερα</span>';
+  } else {
+    leg.innerHTML = '<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#F8E0E0;border:1.5px solid var(--red);vertical-align:middle"></span> Blocked</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FFF3E0;border:1.5px solid var(--warn);vertical-align:middle"></span> Μερικώς</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--bg);border:1.5px solid var(--border);vertical-align:middle"></span> Διαθέσιμο</span>';
+  }
+}
+
+function calMode(mode){
+  calCurrentMode = mode;
+  document.getElementById('tab-bookings').classList.toggle('active', mode==='bookings');
+  document.getElementById('tab-avail').classList.toggle('active', mode==='avail');
+  document.getElementById('calBookingsContent').style.display = mode==='bookings' ? '' : 'none';
+  document.getElementById('calAvailContent').style.display = mode==='avail' ? '' : 'none';
+  renderCalendar();
+}
+
+function calNav(dir){
+  calMonth += dir;
+  if(calMonth > 11){ calMonth=0; calYear++; }
+  if(calMonth < 0){ calMonth=11; calYear--; }
+  renderCalendar();
+}
+
+function onCalDayClick(d){
+  if(calCurrentMode === 'avail'){
+    const title = d + ' ' + calMonthNamesGen[calMonth] + ' ' + calYear;
+    document.getElementById('dayDetailTitle').textContent = '📅 ' + title;
+    openModal('dayDetailModal');
+  }
+}
+
+function filterActivity(el, act){
+  document.querySelectorAll('#activityFilter .pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleSlot(el, slotId){
+  el.classList.toggle('on');
+  toast(el.classList.contains('on') ? '✓ Slot ενεργοποιήθηκε' : '⏸ Slot σε παύση', 'success');
+}
+
+let maxGuests = {cruise: 8, sunset: 6};
+function changeMax(act, delta){
+  maxGuests[act] = Math.max(1, Math.min(20, (maxGuests[act]||8) + delta));
+  document.getElementById('max' + act.charAt(0).toUpperCase() + act.slice(1)).textContent = maxGuests[act];
+}
+
+function blockWeekend(){
+  // Add Saturdays & Sundays of current month
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  for(let d=1;d<=daysInMonth;d++){
+    const day = new Date(calYear, calMonth, d).getDay();
+    if(day===0||day===6) blockedDays.add(d);
+  }
+  renderCalendar(); toast('Σαββατοκύριακα μπλοκαρίστηκαν','success');
+}
+
+function clearAllBlocks(){
+  blockedDays.clear(); renderCalendar(); toast('Όλες οι μέρες ξεμπλοκαρίστηκαν','success');
+}
+
+function blockEntireDay(){
+  closeModal('dayDetailModal'); toast('🚫 Ολόκληρη η μέρα μπλοκαρίστηκε','success');
+}
+
+function confirmBlock(){
+  const from = document.getElementById('blockFrom').value;
+  const to = document.getElementById('blockTo').value;
+  if(from && to){
+    const f = new Date(from), t = new Date(to);
+    for(let d=new Date(f); d<=t; d.setDate(d.getDate()+1)){
+      if(d.getFullYear()===calYear && d.getMonth()===calMonth) blockedDays.add(d.getDate());
+    }
+    renderCalendar();
+  }
+  closeModal('blockRangeModal');
+  toast('✓ Ημερομηνίες μπλοκαρίστηκαν επιτυχώς','success');
+}
+
+function saveAvailability(){
+  toast('💾 Αλλαγές αποθηκεύτηκαν','success');
+}
+
+// init calendar on page load
+renderCalendar();
+
+// Clock
+function tickClock(){
+  const d = new Date();
+  document.getElementById('clock').textContent = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+tickClock(); setInterval(tickClock, 30000);
+</script>
+<script src="jmk_config.js"></script>
+<script src="jmk_store.js"></script>
+<script src="jmk_api.js"></script>
+<script src="jmk_bridge.js"></script>
+</body>
+</html>

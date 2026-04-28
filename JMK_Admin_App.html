@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>JMK · Admin Console</title>
+<script src="jmk_config.js"></script>
+<script src="jmk_store.js"></script>
+<script src="jmk_api.js"></script>
+<style>
+  :root{
+    --accent:#0F4C5C; --accent2:#5F8A8B; --accent-soft:#E8F0F1;
+    --gold:#C49A6C; --gold-soft:#F5EBDD;
+    --bg:#F4F6F8; --panel:#ffffff; --ink:#0F1A1F; --muted:#6B7A82;
+    --line:#E5EAEE; --ok:#1F8F4A; --warn:#B7791F; --bad:#C0392B;
+    --shadow:0 1px 2px rgba(15,26,31,.04), 0 8px 28px rgba(15,26,31,.06);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+
+  /* ============== LOGIN ============== */
+  #login{min-height:100vh;display:none;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at top,#163E48 0%,#0B2A30 60%,#071A1E 100%);color:#fff}
+  #login.show{display:flex}
+  .login-card{background:rgba(255,255,255,.05);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:36px 32px;width:100%;max-width:420px}
+  .login-card h1{margin:0 0 6px;font-size:26px;letter-spacing:.4px}
+  .login-card .sub{color:#B5CDD2;font-size:13px;margin-bottom:24px}
+  .login-card label{font-size:12px;color:#9FB7BC;display:block;margin:14px 0 6px;letter-spacing:.3px}
+  .login-card input{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+    color:#fff;border-radius:10px;padding:11px 13px;outline:none}
+  .login-card input:focus{border-color:var(--gold)}
+  .login-card .btn{margin-top:22px;width:100%;background:var(--gold);color:#1A1408;font-weight:600;
+    padding:12px;border-radius:10px;letter-spacing:.3px}
+  .login-card .btn:hover{filter:brightness(1.05)}
+  .login-card .hint{margin-top:14px;font-size:12px;color:#8FA9AE;text-align:center}
+  .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .login-logo .dot{width:34px;height:34px;border-radius:9px;background:var(--gold);
+    display:grid;place-items:center;color:#1A1408;font-weight:800;font-size:15px}
+
+  /* ============== APP SHELL ============== */
+  #app{display:none;min-height:100vh}
+  #app.show{display:grid;grid-template-columns:240px 1fr;grid-template-rows:auto 1fr}
+
+  .top{grid-column:1/3;background:#fff;border-bottom:1px solid var(--line);
+    padding:0 22px;height:60px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:30}
+  .top .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.3px}
+  .top .brand .dot{width:30px;height:30px;border-radius:8px;background:var(--accent);
+    color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+  .top .grow{flex:1}
+  .top .search{position:relative}
+  .top .search input{width:280px;background:#F4F6F8;border:1px solid var(--line);
+    border-radius:9px;padding:8px 12px 8px 30px;outline:none}
+  .top .search:before{content:"🔍";position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.7}
+  .top .badge{background:var(--gold-soft);color:#7A4A18;font-size:11px;font-weight:700;
+    padding:5px 9px;border-radius:99px}
+  .top .me{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:9px}
+  .top .me .av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-size:12px;font-weight:700}
+  .top .me .nm{font-size:13px;font-weight:600}
+  .top .me .rl{font-size:11px;color:var(--muted)}
+  .top .logout{font-size:12px;color:var(--muted);padding:6px 10px;border-radius:8px}
+  .top .logout:hover{background:#F4F6F8;color:var(--ink)}
+
+  .side{background:#fff;border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:60px;align-self:start;
+    height:calc(100vh - 60px);overflow:auto}
+  .nav-section{font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--muted);
+    text-transform:uppercase;padding:14px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;
+    color:var(--ink);font-size:13.5px;cursor:pointer;font-weight:500;width:100%;text-align:left}
+  .nav-item:hover{background:#F4F6F8}
+  .nav-item.active{background:var(--accent);color:#fff;font-weight:600}
+  .nav-item .ic{font-size:15px;width:22px;text-align:center}
+  .nav-item .ct{margin-left:auto;font-size:11px;background:var(--line);color:var(--ink);
+    padding:1px 7px;border-radius:99px;font-weight:600}
+  .nav-item.active .ct{background:rgba(255,255,255,.2);color:#fff}
+
+  .main{padding:24px 32px;min-width:0}
+  .page-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px}
+  .page-head h2{margin:0 0 4px;font-size:22px;letter-spacing:-.2px}
+  .page-head .sub{color:var(--muted);font-size:13px}
+  .page-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+  .btn{padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;border:1px solid var(--line);
+    background:#fff;color:var(--ink)}
+  .btn:hover{background:#F4F6F8}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.05);background:var(--accent)}
+  .btn.gold{background:var(--gold);color:#1A1408;border-color:var(--gold)}
+  .btn.gold:hover{filter:brightness(1.05);background:var(--gold)}
+  .btn.danger{background:#fff;color:var(--bad);border-color:#F1C7C0}
+  .btn.danger:hover{background:#FCEEEC}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.icon{padding:7px 9px}
+
+  /* cards */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:18px}
+  .grid{display:grid;gap:16px}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr}}
+
+  /* KPI */
+  .kpi .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:26px;font-weight:700;margin:6px 0 2px;letter-spacing:-.5px}
+  .kpi .delta{font-size:12px}
+  .kpi .delta.up{color:var(--ok)}
+  .kpi .delta.down{color:var(--bad)}
+  .kpi .ic{float:right;width:36px;height:36px;border-radius:10px;background:var(--accent-soft);
+    color:var(--accent);display:grid;place-items:center;font-size:16px}
+
+  /* Tables */
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+  .tbl th{text-align:left;padding:10px 12px;font-weight:600;font-size:12px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line);background:#FAFBFC}
+  .tbl td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl tr.row{cursor:pointer}
+  .tbl tr.row:hover td{background:#FAFBFC}
+
+  /* Pills */
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;
+    font-size:11.5px;font-weight:600;letter-spacing:.2px}
+  .pill.green{background:#E6F6EC;color:#1F6F3D}
+  .pill.gold{background:#F7ECDA;color:#7A4A18}
+  .pill.red{background:#FCE9E5;color:#9A2A1B}
+  .pill.gray{background:#EDF1F4;color:#4A5A65}
+  .pill.blue{background:#E6EFF1;color:#0F4C5C}
+  .pill.dot:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+
+  /* Avatar */
+  .av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
+    display:inline-grid;place-items:center;font-weight:700;font-size:11px;margin-right:8px;vertical-align:middle}
+  .av.lg{width:48px;height:48px;font-size:16px}
+  .av.gold{background:var(--gold);color:#1A1408}
+  .av.green{background:var(--ok)}
+  .av.gray{background:var(--muted)}
+
+  /* Forms */
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.3px}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;
+    padding:9px 12px;background:#fff;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+  .field .help{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .row-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(15,26,31,.5);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:80;padding:24px}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;
+    box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal.lg{max-width:840px}
+  .modal-h{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .modal-h h3{margin:0;font-size:17px}
+  .modal-h .x{margin-left:auto;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+    color:var(--muted);font-size:18px}
+  .modal-h .x:hover{background:#F4F6F8;color:var(--ink)}
+  .modal-b{padding:22px;overflow:auto}
+  .modal-f{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+
+  /* Categories chips multi-select */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;
+    border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:500;cursor:pointer;user-select:none}
+  .chip:hover{background:#F4F6F8}
+  .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+  .chip .ic{font-size:14px}
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:#0F1A1F;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:90;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+
+  /* Empty state */
+  .empty{text-align:center;padding:48px 22px;color:var(--muted)}
+  .empty .ic{font-size:36px;margin-bottom:8px}
+  .empty .tt{font-weight:600;color:var(--ink);margin-bottom:4px}
+
+  /* Section subtitle */
+  .sec-tt{font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--ink);margin:0 0 12px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  .tab{padding:9px 14px;font-size:13px;font-weight:600;color:var(--muted);
+    border-bottom:2px solid transparent;cursor:pointer}
+  .tab.on{color:var(--accent);border-color:var(--accent)}
+
+  /* Tiny utils */
+  .right{text-align:right}
+  .center{text-align:center}
+  .nowrap{white-space:nowrap}
+  .num{font-variant-numeric:tabular-nums}
+  .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  .stack > * + *{margin-top:14px}
+  .between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .check{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer}
+  .check:hover{background:#F4F6F8}
+  .check input{margin:0}
+
+  /* Bar chart minimal */
+  .bars{display:flex;align-items:flex-end;gap:6px;height:120px;padding:8px 0}
+  .bars .b{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent2));
+    border-radius:4px 4px 0 0;min-height:4px;position:relative}
+  .bars .b:hover{filter:brightness(1.1)}
+  .bars-x{display:flex;gap:6px;font-size:10px;color:var(--muted);margin-top:6px}
+  .bars-x span{flex:1;text-align:center}
+
+  /* Donut */
+  .donut{position:relative;width:130px;height:130px;margin:0 auto}
+  .donut svg{transform:rotate(-90deg)}
+  .donut .lbl{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:var(--muted);text-align:center}
+  .donut .lbl b{display:block;font-size:20px;color:var(--ink);font-weight:700}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:12px}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:middle}
+
+  hr.sep{border:0;border-top:1px solid var(--line);margin:14px 0}
+
+  /* Activity moderation */
+  .act-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:14px;align-items:flex-start}
+  .act-card .img{width:84px;height:64px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--gold));
+    color:#fff;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+  .act-card .body{flex:1;min-width:0}
+  .act-card .body h4{margin:0 0 4px;font-size:14px}
+  .act-card .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .act-card .actions{display:flex;gap:6px;flex-shrink:0}
+
+  /* Booking timeline */
+  .timeline{position:relative;padding-left:22px;border-left:2px solid var(--line);margin-left:6px}
+  .timeline .step{position:relative;padding-bottom:14px}
+  .timeline .step:before{content:"";position:absolute;left:-29px;top:3px;width:12px;height:12px;border-radius:50%;
+    background:#fff;border:2px solid var(--line)}
+  .timeline .step.done:before{background:var(--ok);border-color:var(--ok)}
+  .timeline .step .tt{font-weight:600;font-size:13px}
+  .timeline .step .tm{font-size:11.5px;color:var(--muted)}
+
+  /* Anti-bypass row */
+  .alert-row{padding:14px;border-radius:10px;background:#FCEEEC;border:1px solid #F1C7C0;margin-bottom:10px}
+  .alert-row .h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .alert-row .src{background:rgba(0,0,0,.05);padding:7px 10px;border-radius:8px;font-family:monospace;font-size:12px}
+  .alert-row .red{color:var(--bad);text-decoration:line-through;background:rgba(192,57,43,.1);padding:1px 4px;border-radius:3px}
+
+  @media (max-width:880px){
+    #app.show{grid-template-columns:1fr}
+    .side{display:none}
+    .main{padding:18px}
+    .top .search input{width:160px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login" class="show">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="dot">JMK</div>
+      <div>
+        <div style="font-weight:700">Admin Console</div>
+        <div style="font-size:11px;color:#9FB7BC">Internal · Operations</div>
+      </div>
+    </div>
+    <h1>Καλώς ήρθες πίσω</h1>
+    <div class="sub">Συνδέσου για να διαχειριστείς την πλατφόρμα.</div>
+    <div class="field">
+      <label>Email</label>
+      <input id="logEmail" type="email" placeholder="admin@jmk.gr" value="admin@jmk.gr">
+    </div>
+    <div class="field">
+      <label>Κωδικός</label>
+      <input id="logPass" type="password" placeholder="••••••••" value="demo">
+    </div>
+    <button class="btn" onclick="doLogin()">Είσοδος</button>
+    <div class="hint">Demo: οποιοδήποτε email/κωδικός</div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <header class="top">
+    <div class="brand"><div class="dot">JMK</div> Admin Console</div>
+    <span class="badge">DEMO ENV</span>
+    <div class="grow"></div>
+    <div class="search"><input id="globalSearch" type="search" placeholder="Αναζήτηση…" oninput="onGlobalSearch(this.value)"></div>
+    <button class="btn sm icon" title="Reset demo data" onclick="resetData()">↻</button>
+    <div class="me">
+      <div class="av" id="meAv">K</div>
+      <div>
+        <div class="nm" id="meNm">Konstantinos</div>
+        <div class="rl">Owner · Admin</div>
+      </div>
+    </div>
+    <button class="logout" onclick="doLogout()">Αποσύνδεση</button>
+  </header>
+
+  <aside class="side">
+    <div class="nav-section">Επισκόπηση</div>
+    <button class="nav-item active" data-page="overview" onclick="goPage('overview')"><span class="ic">📊</span> Dashboard</button>
+
+    <div class="nav-section">Καταλόγος</div>
+    <button class="nav-item" data-page="islands"    onclick="goPage('islands')"><span class="ic">🏝️</span> Νησιά <span class="ct" id="ct-isl">0</span></button>
+    <button class="nav-item" data-page="categories" onclick="goPage('categories')"><span class="ic">🏷️</span> Κατηγορίες</button>
+    <button class="nav-item" data-page="hotels"     onclick="goPage('hotels')"><span class="ic">🏨</span> Ξενοδοχεία <span class="ct" id="ct-hot">0</span></button>
+    <button class="nav-item" data-page="partners"   onclick="goPage('partners')"><span class="ic">🤝</span> Συνεργάτες <span class="ct" id="ct-par">0</span></button>
+    <button class="nav-item" data-page="activities" onclick="goPage('activities')"><span class="ic">🚤</span> Δραστηριότητες <span class="ct" id="ct-act">0</span></button>
+    <button class="nav-item" data-page="guests"     onclick="goPage('guests')"><span class="ic">👤</span> Επισκέπτες <span class="ct" id="ct-gst">0</span></button>
+
+    <div class="nav-section">Λειτουργίες</div>
+    <button class="nav-item" data-page="bookings"   onclick="goPage('bookings')"><span class="ic">📅</span> Κρατήσεις <span class="ct" id="ct-bok">0</span></button>
+    <button class="nav-item" data-page="payouts"    onclick="goPage('payouts')"><span class="ic">💰</span> Πληρωμές</button>
+    <button class="nav-item" data-page="alerts"     onclick="goPage('alerts')"><span class="ic">⚠️</span> Anti-bypass <span class="ct" id="ct-alr">0</span></button>
+    <button class="nav-item" data-page="kyc"        onclick="goPage('kyc')"><span class="ic">📋</span> KYC <span class="ct" id="ct-kyc">0</span></button>
+    <button class="nav-item" data-page="requests"   onclick="goPage('requests')"><span class="ic">🚪</span> Αιτήσεις partners <span class="ct" id="ct-req">0</span></button>
+
+    <div class="nav-section">Σύστημα</div>
+    <button class="nav-item" data-page="settings"   onclick="goPage('settings')"><span class="ic">⚙️</span> Ρυθμίσεις</button>
+    <button class="nav-item" data-page="audit"      onclick="goPage('audit')"><span class="ic">🕓</span> Audit log</button>
+  </aside>
+
+  <main class="main" id="mainArea">
+    <!-- pages render here -->
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal">
+    <div class="modal-h"><h3 id="modalT">Τίτλος</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b" id="modalB"></div>
+    <div class="modal-f" id="modalF"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============== HELPERS ============== */
+var $ = function(s,r){return (r||document).querySelector(s)};
+var $$ = function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var fmt = {
+  eur: function(n){ return '€' + (Number(n)||0).toLocaleString('el-GR',{minimumFractionDigits:0,maximumFractionDigits:0}) },
+  eur2: function(n){ return '€' + (Number(n)||0).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2}) },
+  date: function(d){
+    if(!d) return '—';
+    var x = new Date(d);
+    if(isNaN(x)) return d;
+    return x.toLocaleDateString('el-GR',{day:'2-digit',month:'short',year:'numeric'});
+  },
+  initials: function(name){
+    if(!name) return '?';
+    var p = String(name).split(/\s+/).filter(Boolean);
+    return ((p[0]||'')[0]||'') + ((p[1]||'')[0]||'');
+  }
+};
+function toast(msg){ var t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},1800) }
+function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]}) }
+
+/* ============== AUTH ============== */
+function doLogin(){
+  var em = $('#logEmail').value.trim();
+  if(!em){ toast('Συμπλήρωσε email'); return }
+  JMK.setSession({role:'admin', name:'Konstantinos', email:em, loginAt: Date.now()});
+  $('#meNm').textContent = 'Konstantinos';
+  $('#meAv').textContent = fmt.initials('Konstantinos').toUpperCase();
+  $('#login').classList.remove('show');
+  $('#app').classList.add('show');
+  refreshNavCounts();
+  goPage('overview');
+}
+function doLogout(){
+  JMK.clearSession();
+  $('#app').classList.remove('show');
+  $('#login').classList.add('show');
+}
+function resetData(){
+  if(!confirm('Επαναφορά όλων των δεδομένων demo;')) return;
+  JMK.reset();
+  refreshNavCounts();
+  goPage(currentPage);
+  toast('Έγινε επαναφορά demo');
+}
+
+/* ============== MODAL ============== */
+function openModal(title, body, footer, opts){
+  $('#modalT').textContent = title;
+  $('#modalB').innerHTML = body || '';
+  $('#modalF').innerHTML = footer || '';
+  $('#modal').classList.toggle('lg', !!(opts && opts.lg));
+  $('#modalBg').classList.add('show');
+}
+function closeModal(){ $('#modalBg').classList.remove('show') }
+
+/* ============== ROUTER ============== */
+var currentPage = 'overview';
+function goPage(p){
+  currentPage = p;
+  $$('.nav-item').forEach(function(n){ n.classList.toggle('active', n.dataset.page === p) });
+  var fn = pages[p];
+  if(!fn){ $('#mainArea').innerHTML = '<div class="empty"><div class="ic">🚧</div><div class="tt">Σε ανάπτυξη</div></div>'; return }
+  $('#mainArea').innerHTML = '';
+  fn($('#mainArea'));
+}
+
+/* ============== NAV COUNTS ============== */
+function refreshNavCounts(){
+  $('#ct-isl').textContent = JMK.get('islands').length;
+  $('#ct-hot').textContent = JMK.get('hotels').length;
+  $('#ct-par').textContent = JMK.get('partners').length;
+  $('#ct-act').textContent = JMK.get('activities').length;
+  $('#ct-gst').textContent = JMK.get('guests').length;
+  $('#ct-bok').textContent = JMK.get('bookings').length;
+  $('#ct-alr').textContent = JMK.get('messages').filter(function(m){return m.flagged && !m.resolved}).length
+              + JMK.get('flaggedMessages').filter(function(m){return !m.resolved}).length;
+  $('#ct-kyc').textContent = JMK.get('partners').filter(function(p){return p.status==='pending' || p.kycStatus==='pending'}).length;
+  var ctReq = $('#ct-req'); if(ctReq) ctReq.textContent = JMK.get('partnerRequests').filter(function(r){return r.status!=='resolved'}).length;
+}
+
+/* ============== PAGES ============== */
+var pages = {};
+
+/* ---------- OVERVIEW ---------- */
+pages.overview = function(root){
+  var bookings = JMK.get('bookings');
+  var totalGmv = bookings.reduce(function(a,b){return a + (b.total||0)}, 0);
+  var paidBks = bookings.filter(function(b){return b.status==='paid'||b.status==='completed'});
+  var paidGmv = paidBks.reduce(function(a,b){return a + (b.total||0)}, 0);
+  var st = JMK.settings();
+  var jmkRev = paidGmv * (st.jmkCommissionPct/100);
+  var alerts = JMK.get('messages').filter(function(m){return m.flagged && !m.resolved}).length;
+  var pendingPartners = JMK.get('partners').filter(function(p){return p.kycStatus!=='verified'}).length;
+  var pendingHotels   = JMK.get('hotels').filter(function(h){return h.status==='pending'}).length;
+
+  // bookings by day (last 7 days mock)
+  var days = ['Δευ','Τρι','Τετ','Πεμ','Παρ','Σαβ','Κυρ'];
+  var dayCounts = [4,6,3,8,12,18,14];
+  var maxD = Math.max.apply(null,dayCounts);
+
+  // category split
+  var cats = JMK.get('categories');
+  var acts = JMK.get('activities');
+  var byCat = {};
+  acts.forEach(function(a){ byCat[a.categoryId] = (byCat[a.categoryId]||0)+1 });
+  var topCats = cats.map(function(c){return {c:c,n:byCat[c.id]||0}}).filter(function(x){return x.n>0}).sort(function(a,b){return b.n-a.n}).slice(0,5);
+  var totalCat = topCats.reduce(function(a,x){return a+x.n},0)||1;
+  var palette = ['#0F4C5C','#5F8A8B','#C49A6C','#1F8F4A','#9C6F2C'];
+
+  root.innerHTML =
+    '<div class="page-head">'+
+      '<div><h2>Dashboard</h2><div class="sub">Σύνοψη πλατφόρμας · ' + fmt.date(new Date()) + '</div></div>'+
+      '<div class="actions">'+
+        '<button class="btn">📤 Εξαγωγή</button>'+
+        '<button class="btn primary" onclick="goPage(\'islands\')">+ Νέο νησί</button>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="grid g4" style="margin-bottom:18px">'+
+      kpiCard('GMV (συνολικά)', fmt.eur(totalGmv), '+18% vs μήνα', 'up', '💸') +
+      kpiCard('Έσοδα JMK',      fmt.eur(jmkRev),  '+12% vs μήνα', 'up', '💎') +
+      kpiCard('Κρατήσεις',      bookings.length,  '+24% vs μήνα', 'up', '📅') +
+      kpiCard('Επισκέπτες',     JMK.get('guests').length, '+9% vs μήνα', 'up', '👤') +
+    '</div>'+
+
+    '<div class="grid g3" style="margin-bottom:18px">'+
+      '<div class="card" style="grid-column:span 2">'+
+        '<div class="between"><h3 class="sec-tt">Κρατήσεις (τελευταίες 7 μέρες)</h3>'+
+          '<span class="pill blue dot">live</span></div>'+
+        '<div class="bars">'+ dayCounts.map(function(v){return '<div class="b" style="height:'+(4+v/maxD*110)+'px" title="'+v+' κρατήσεις"></div>'}).join('') +'</div>'+
+        '<div class="bars-x">'+ days.map(function(d){return '<span>'+d+'</span>'}).join('') +'</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3 class="sec-tt">Δραστηριότητες ανά κατηγορία</h3>'+
+        renderDonut(topCats.map(function(x,i){return {label:x.c.icon+' '+x.c.name, value:x.n, color:palette[i%palette.length]}}), totalCat)+
+      '</div>'+
+    '</div>'+
+
+    '<div class="grid g2" style="margin-bottom:18px">'+
+      '<div class="card">'+
+        '<div class="between"><h3 class="sec-tt">⚠️ Ειδοποιήσεις</h3><a onclick="goPage(\'alerts\')" style="cursor:pointer;font-size:12px">Όλες →</a></div>'+
+        '<ul style="margin:0;padding:0;list-style:none">'+
+          '<li class="between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:600">Anti-bypass triggered</div><div style="color:var(--muted);font-size:12px">'+alerts+' ύποπτα μηνύματα να ελεγχθούν</div></div><span class="pill red dot">'+alerts+'</span></li>'+
+          '<li class="between" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:600">Συνεργάτες σε εκκρεμότητα KYC</div><div style="color:var(--muted);font-size:12px">'+pendingPartners+' συνεργάτες περιμένουν έγκριση</div></div><span class="pill gold dot">'+pendingPartners+'</span></li>'+
+          '<li class="between" style="padding:10px 0"><div><div style="font-weight:600">Ξενοδοχεία προς έγκριση</div><div style="color:var(--muted);font-size:12px">'+pendingHotels+' νέες αιτήσεις ξενοδοχείων</div></div><span class="pill gold dot">'+pendingHotels+'</span></li>'+
+        '</ul>'+
+      '</div>'+
+      '<div class="card">'+
+        '<div class="between"><h3 class="sec-tt">📅 Πρόσφατες κρατήσεις</h3><a onclick="goPage(\'bookings\')" style="cursor:pointer;font-size:12px">Όλες →</a></div>'+
+        renderRecentBookings()+
+      '</div>'+
+    '</div>'+
+
+    '<div class="grid g3">'+
+      '<div class="card"><h3 class="sec-tt">🏝️ Top νησιά</h3>'+ renderTopIslands() +'</div>'+
+      '<div class="card"><h3 class="sec-tt">🏆 Top συνεργάτες</h3>'+ renderTopPartners() +'</div>'+
+      '<div class="card"><h3 class="sec-tt">💰 Επόμενες πληρωμές</h3>'+ renderUpcomingPayouts() +'</div>'+
+    '</div>';
+};
+
+function kpiCard(lbl, val, delta, dir, ic){
+  return '<div class="card kpi"><span class="ic">'+ic+'</span><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="delta '+(dir||'')+'">'+(dir==='up'?'▲ ':dir==='down'?'▼ ':'')+delta+'</div></div>';
+}
+function renderDonut(parts, total){
+  var c=2*Math.PI*52, off=0;
+  var segs = parts.map(function(p){
+    var len = (p.value/total)*c;
+    var s = '<circle r="52" cx="65" cy="65" fill="transparent" stroke="'+p.color+'" stroke-width="20" stroke-dasharray="'+len+' '+(c-len)+'" stroke-dashoffset="'+(-off)+'"/>';
+    off += len; return s;
+  }).join('');
+  var leg = parts.map(function(p){return '<span><i style="background:'+p.color+'"></i>'+escapeHTML(p.label)+' · '+p.value+'</span>'}).join('');
+  return '<div class="donut"><svg viewBox="0 0 130 130">'+segs+'</svg><div class="lbl"><b>'+total+'</b>σύνολο</div></div><div class="legend">'+leg+'</div>';
+}
+function renderRecentBookings(){
+  var b = JMK.get('bookings').slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0)}).slice(0,5);
+  if(!b.length) return '<div class="empty"><div class="ic">📭</div>Καμία κράτηση</div>';
+  return '<table class="tbl"><tbody>'+ b.map(function(x){
+    var g = JMK.find('guests',x.guestId)||{name:'—'};
+    var a = JMK.find('activities',x.activityId)||{title:'—'};
+    return '<tr class="row" onclick="openBooking(\''+x.id+'\')"><td><div class="av gold">'+escapeHTML(fmt.initials(g.name))+'</div>'+escapeHTML(g.name)+'</td><td><div class="truncate" style="max-width:160px">'+escapeHTML(a.title)+'</div></td><td class="num right">'+fmt.eur(x.total)+'</td><td>'+statusPill(x.status)+'</td></tr>';
+  }).join('') +'</tbody></table>';
+}
+function renderTopIslands(){
+  var isl = JMK.get('islands').filter(function(i){return i.status==='active'}).slice().sort(function(a,b){return (b.partnerCount||0)-(a.partnerCount||0)}).slice(0,5);
+  return '<ul style="margin:0;padding:0;list-style:none">'+ isl.map(function(i,k){
+    return '<li class="between" style="padding:8px 0;border-bottom:1px solid var(--line)"><div><b>#'+(k+1)+'</b> '+escapeHTML(i.name)+' <span style="color:var(--muted);font-size:11px">'+escapeHTML(i.region)+'</span></div><span class="pill blue">'+(i.partnerCount||0)+' συνεργάτες</span></li>';
+  }).join('') +'</ul>';
+}
+function renderTopPartners(){
+  var p = JMK.get('partners').slice().sort(function(a,b){return (b.totalEarnings||0)-(a.totalEarnings||0)}).slice(0,5);
+  return '<ul style="margin:0;padding:0;list-style:none">'+ p.map(function(x,k){
+    return '<li class="between" style="padding:8px 0;border-bottom:1px solid var(--line)"><div><div class="av gold">'+escapeHTML(fmt.initials(x.name))+'</div>'+escapeHTML(x.name)+' <span style="color:var(--muted);font-size:11px">· '+(x.rating||'—')+'★</span></div><span class="num">'+fmt.eur(x.totalEarnings||0)+'</span></li>';
+  }).join('') +'</ul>';
+}
+function renderUpcomingPayouts(){
+  var p = JMK.get('payouts').filter(function(x){return x.status==='scheduled'}).slice(0,5);
+  if(!p.length) return '<div class="empty" style="padding:18px"><div>Καμία επερχόμενη</div></div>';
+  return '<ul style="margin:0;padding:0;list-style:none">'+ p.map(function(x){
+    var who = (x.partnerId? JMK.find('partners',x.partnerId): JMK.find('hotels',x.hotelId)) || {name:'—'};
+    return '<li class="between" style="padding:8px 0;border-bottom:1px solid var(--line)"><div>'+escapeHTML(who.name)+'<div style="font-size:11px;color:var(--muted)">'+fmt.date(x.scheduledFor)+'</div></div><span class="num">'+fmt.eur(x.amount)+'</span></li>';
+  }).join('') +'</ul>';
+}
+function statusPill(s){
+  var map = {
+    paid:        ['green','Πληρωμένη'],
+    completed:   ['green','Ολοκληρώθηκε'],
+    pending:     ['gold','Εκκρεμεί'],
+    confirmed:   ['blue','Επιβεβαιωμένη'],
+    canceled:    ['red','Ακυρώθηκε'],
+    refunded:    ['gray','Επιστροφή'],
+    active:      ['green','Ενεργό'],
+    inactive:    ['gray','Ανενεργό'],
+    suspended:   ['red','Σε αναστολή'],
+    draft:       ['gray','Πρόχειρο'],
+    review:      ['gold','Έλεγχος'],
+    approved:    ['green','Εγκεκριμένο'],
+    rejected:    ['red','Απορρίφθηκε'],
+    verified:    ['green','Πιστοποιημένο'],
+    scheduled:   ['blue','Προγραμματισμένο'],
+    sent:        ['green','Στάλθηκε']
+  };
+  var x = map[s] || ['gray', s||'—'];
+  return '<span class="pill '+x[0]+' dot">'+x[1]+'</span>';
+}
+
+/* ---------- ISLANDS ---------- */
+pages.islands = function(root){
+  var islands = JMK.get('islands');
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Νησιά</h2><div class="sub">Διαχείριση προορισμών & επιτρεπόμενων κατηγοριών ανά νησί</div></div>'+
+      '<div class="actions"><button class="btn primary" onclick="editIsland()">+ Νέο νησί</button></div>'+
+    '</div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr>'+
+        '<th>Νησί</th><th>Περιοχή</th><th>Κατηγορίες</th><th class="right">Ξενοδοχεία</th><th class="right">Συνεργάτες</th><th>Status</th><th></th>'+
+      '</tr></thead><tbody id="isl-rows"></tbody></table>'+
+    '</div>';
+  var rows = islands.map(function(i){
+    var cats = (i.allowedCategories||[]).map(function(cid){
+      var c = JMK.find('categories',cid); return c? c.icon : '';
+    }).join('');
+    return '<tr class="row" onclick="editIsland(\''+i.id+'\')">'+
+      '<td><b>'+escapeHTML(i.name)+'</b></td>'+
+      '<td>'+escapeHTML(i.region||'—')+'</td>'+
+      '<td><span style="font-size:18px;letter-spacing:2px">'+cats+'</span> <span style="color:var(--muted);font-size:11px">·'+(i.allowedCategories||[]).length+'</span></td>'+
+      '<td class="right num">'+(i.hotelCount||0)+'</td>'+
+      '<td class="right num">'+(i.partnerCount||0)+'</td>'+
+      '<td>'+statusPill(i.status)+'</td>'+
+      '<td class="right"><button class="btn sm" onclick="event.stopPropagation();editIsland(\''+i.id+'\')">Επεξ.</button></td>'+
+    '</tr>';
+  }).join('');
+  $('#isl-rows').innerHTML = rows || '<tr><td colspan="7"><div class="empty"><div class="ic">🏝️</div>Κανένα νησί ακόμη</div></td></tr>';
+};
+
+function editIsland(id){
+  var isl = id ? JMK.find('islands', id) : { name:'', region:'Κυκλάδες', status:'pending', allowedCategories:[] };
+  if(!isl) return;
+  var cats = JMK.get('categories');
+  var sel = isl.allowedCategories || [];
+
+  var body =
+    '<div class="row-form">'+
+      '<div class="field"><label>Όνομα *</label><input id="f-name" value="'+escapeHTML(isl.name)+'" placeholder="π.χ. Νάξος"></div>'+
+      '<div class="field"><label>Περιοχή</label><input id="f-region" value="'+escapeHTML(isl.region||'')+'" placeholder="Κυκλάδες"></div>'+
+    '</div>'+
+    '<div class="field"><label>Status</label>'+
+      '<select id="f-status">'+
+        ['active','pending','inactive'].map(function(s){return '<option value="'+s+'"'+(isl.status===s?' selected':'')+'>'+s+'</option>'}).join('')+
+      '</select>'+
+    '</div>'+
+    '<hr class="sep">'+
+    '<h4 style="margin:0 0 4px">Επιτρεπόμενες κατηγορίες δραστηριοτήτων</h4>'+
+    '<div class="help" style="color:var(--muted);font-size:12px;margin-bottom:12px">Π.χ. στη Μύκονο μπορεί να μη θέλεις πεζοπορία. Επίλεξε μόνο όσες ταιριάζουν στο νησί.</div>'+
+    '<div class="chips" id="f-chips">'+
+      cats.map(function(c){
+        var on = sel.indexOf(c.id)>=0;
+        return '<button type="button" class="chip'+(on?' on':'')+'" data-cid="'+c.id+'"><span class="ic">'+c.icon+'</span>'+escapeHTML(c.name)+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="group" style="margin-top:10px">'+
+      '<button class="btn sm" type="button" onclick="islandChips(\'all\')">Όλα</button>'+
+      '<button class="btn sm" type="button" onclick="islandChips(\'none\')">Καθόλου</button>'+
+      '<button class="btn sm" type="button" onclick="islandChips(\'invert\')">Αντιστροφή</button>'+
+    '</div>';
+
+  var foot =
+    (id ? '<button class="btn danger" style="margin-right:auto" onclick="deleteIsland(\''+id+'\')">🗑 Διαγραφή</button>' : '')+
+    '<button class="btn" onclick="closeModal()">Άκυρο</button>'+
+    '<button class="btn primary" onclick="saveIsland('+(id?"'"+id+"'":'null')+')">Αποθήκευση</button>';
+
+  openModal(id ? 'Επεξεργασία νησιού · '+isl.name : 'Νέο νησί', body, foot, {lg:true});
+  $('#f-chips').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if(!b) return;
+    b.classList.toggle('on');
+  });
+}
+function islandChips(mode){
+  $$('#f-chips .chip').forEach(function(c){
+    if(mode==='all') c.classList.add('on');
+    else if(mode==='none') c.classList.remove('on');
+    else if(mode==='invert') c.classList.toggle('on');
+  });
+}
+function saveIsland(id){
+  var name = $('#f-name').value.trim();
+  if(!name){ toast('Συμπλήρωσε όνομα'); return }
+  var allowed = $$('#f-chips .chip.on').map(function(c){return c.dataset.cid});
+  var data = {
+    name: name,
+    region: $('#f-region').value.trim(),
+    status: $('#f-status').value,
+    allowedCategories: allowed
+  };
+  if(id){
+    JMK.update('islands', id, data);
+    toast('Αποθηκεύτηκε');
+  } else {
+    data.hotelCount = 0; data.partnerCount = 0;
+    JMK.add('islands', data);
+    toast('Προστέθηκε νησί');
+  }
+  closeModal(); refreshNavCounts(); goPage('islands');
+}
+function deleteIsland(id){
+  if(!confirm('Διαγραφή νησιού;')) return;
+  JMK.remove('islands', id);
+  closeModal(); refreshNavCounts(); goPage('islands');
+  toast('Διαγράφηκε');
+}
+
+/* ---------- CATEGORIES ---------- */
+pages.categories = function(root){
+  var cats = JMK.get('categories');
+  var islands = JMK.get('islands');
+  var actCount = {};
+  JMK.get('activities').forEach(function(a){actCount[a.categoryId]=(actCount[a.categoryId]||0)+1});
+
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Κατηγορίες δραστηριοτήτων</h2><div class="sub">Τα είδη που μπορούν να εμφανιστούν στους επισκέπτες</div></div>'+
+      '<div class="actions"><button class="btn primary" onclick="editCategory()">+ Νέα κατηγορία</button></div>'+
+    '</div>'+
+    '<div class="grid g3">'+
+      cats.map(function(c){
+        var allowed = islands.filter(function(i){return (i.allowedCategories||[]).indexOf(c.id)>=0});
+        return '<div class="card">'+
+          '<div class="between" style="margin-bottom:8px"><div style="font-size:30px">'+c.icon+'</div>'+
+          '<button class="btn sm" onclick="editCategory(\''+c.id+'\')">Επεξ.</button></div>'+
+          '<h3 style="margin:0 0 4px;font-size:16px">'+escapeHTML(c.name)+'</h3>'+
+          '<div style="color:var(--muted);font-size:12px;margin-bottom:10px">'+(c.defaultDuration||'')+'</div>'+
+          '<div class="between" style="font-size:12px"><span>Ενεργό σε <b>'+allowed.length+'</b> νησιά</span><span>'+ (actCount[c.id]||0) +' δραστηριότητες</span></div>'+
+        '</div>';
+      }).join('')+
+    '</div>';
+};
+function editCategory(id){
+  var cat = id ? JMK.find('categories', id) : { id:'', name:'', icon:'⭐', defaultDuration:'' };
+  if(!cat) return;
+  var body =
+    '<div class="row-form">'+
+      '<div class="field"><label>ID *</label><input id="c-id" value="'+escapeHTML(cat.id)+'" '+(id?'disabled':'')+' placeholder="π.χ. yoga"></div>'+
+      '<div class="field"><label>Εικονίδιο</label><input id="c-icon" value="'+escapeHTML(cat.icon)+'" placeholder="🧘"></div>'+
+    '</div>'+
+    '<div class="field"><label>Όνομα *</label><input id="c-name" value="'+escapeHTML(cat.name)+'"></div>'+
+    '<div class="field"><label>Default διάρκεια</label><input id="c-dur" value="'+escapeHTML(cat.defaultDuration||'')+'" placeholder="π.χ. 90 λεπτά"></div>';
+  var foot =
+    (id ? '<button class="btn danger" style="margin-right:auto" onclick="deleteCategory(\''+id+'\')">🗑 Διαγραφή</button>':'')+
+    '<button class="btn" onclick="closeModal()">Άκυρο</button>'+
+    '<button class="btn primary" onclick="saveCategory('+(id?"'"+id+"'":'null')+')">Αποθήκευση</button>';
+  openModal(id?'Επεξεργασία κατηγορίας':'Νέα κατηγορία', body, foot);
+}
+function saveCategory(id){
+  var data = {
+    name: $('#c-name').value.trim(),
+    icon: $('#c-icon').value.trim() || '⭐',
+    defaultDuration: $('#c-dur').value.trim()
+  };
+  if(!data.name){ toast('Συμπλήρωσε όνομα'); return }
+  if(id){ JMK.update('categories', id, data); }
+  else {
+    var nid = ($('#c-id').value.trim() || data.name.toLowerCase()).replace(/\s+/g,'-');
+    if(JMK.find('categories', nid)){ toast('Υπάρχει ήδη'); return }
+    data.id = nid;
+    JMK.add('categories', data);
+  }
+  closeModal(); goPage('categories'); toast('Αποθηκεύτηκε');
+}
+function deleteCategory(id){
+  if(!confirm('Διαγραφή κατηγορίας; Θα αφαιρεθεί από τα επιτρεπόμενα όλων των νησιών.')) return;
+  JMK.remove('categories', id);
+  // also strip from island.allowedCategories
+  JMK.get('islands').forEach(function(i){
+    if((i.allowedCategories||[]).indexOf(id)>=0){
+      JMK.update('islands', i.id, { allowedCategories: i.allowedCategories.filter(function(x){return x!==id}) });
+    }
+  });
+  closeModal(); goPage('categories'); toast('Διαγράφηκε');
+}
+
+/* ---------- HOTELS ---------- */
+pages.hotels = function(root){
+  var hotels = JMK.get('hotels');
+  var islands = JMK.get('islands');
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Ξενοδοχεία</h2><div class="sub">Συνολικά '+hotels.length+' ξενοδοχεία στην πλατφόρμα</div></div>'+
+      '<div class="actions">'+
+        '<button class="btn">📤 Export CSV</button>'+
+        '<button class="btn primary" onclick="editHotel()">+ Νέο ξενοδοχείο</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr>'+
+        '<th>Ξενοδοχείο</th><th>Νησί</th><th>Δωμάτια</th><th>Commission</th><th>Επαφή</th><th>Status</th><th></th>'+
+      '</tr></thead><tbody>'+
+        hotels.map(function(h){
+          var isl = JMK.find('islands', h.islandId)||{name:'—'};
+          return '<tr class="row" onclick="editHotel(\''+h.id+'\')">'+
+            '<td><b>'+escapeHTML(h.name)+'</b><div style="font-size:11px;color:var(--muted)">'+escapeHTML(h.code||h.id)+'</div></td>'+
+            '<td>'+escapeHTML(isl.name)+'</td>'+
+            '<td class="num">'+(h.rooms||'—')+'</td>'+
+            '<td class="num">'+((h.commissionPct||0).toFixed(1))+'%</td>'+
+            '<td>'+escapeHTML(h.contactName||'—')+'<div style="font-size:11px;color:var(--muted)">'+escapeHTML(h.email||'')+'</div></td>'+
+            '<td>'+statusPill(h.status)+'</td>'+
+            '<td class="right">'+
+              (h.status==='pending' ? '<button class="btn sm primary" onclick="event.stopPropagation();approveHotel(\''+h.id+'\')">Έγκριση</button>' :
+               '<button class="btn sm" onclick="event.stopPropagation();editHotel(\''+h.id+'\')">Επεξ.</button>')+
+            '</td>'+
+          '</tr>';
+        }).join('') +
+      '</tbody></table>'+
+    '</div>';
+};
+function editHotel(id){
+  var h = id ? JMK.find('hotels', id) : { name:'', islandId:'', rooms:0, commissionPct:5.0, status:'pending', contactName:'', email:'', phone:'' };
+  if(!h) return;
+  var st = JMK.settings();
+  var isls = JMK.get('islands');
+  var body =
+    '<div class="row-form">'+
+      '<div class="field"><label>Όνομα *</label><input id="h-name" value="'+escapeHTML(h.name)+'"></div>'+
+      '<div class="field"><label>Νησί</label><select id="h-island">'+isls.map(function(i){return '<option value="'+i.id+'"'+(h.islandId===i.id?' selected':'')+'>'+escapeHTML(i.name)+'</option>'}).join('')+'</select></div>'+
+    '</div>'+
+    '<div class="row-form">'+
+      '<div class="field"><label>Δωμάτια</label><input id="h-rooms" type="number" value="'+(h.rooms||0)+'"></div>'+
+      '<div class="field"><label>Commission %</label><input id="h-comm" type="number" step="0.1" value="'+(h.commissionPct||st.defaultHotelCommissionPct)+'"><div class="help">Default '+st.defaultHotelCommissionPct+'%</div></div>'+
+    '</div>'+
+    '<div class="field"><label>Όνομα επαφής</label><input id="h-cn" value="'+escapeHTML(h.contactName||'')+'"></div>'+
+    '<div class="row-form">'+
+      '<div class="field"><label>Email</label><input id="h-em" type="email" value="'+escapeHTML(h.email||'')+'"></div>'+
+      '<div class="field"><label>Τηλέφωνο</label><input id="h-ph" value="'+escapeHTML(h.phone||'')+'"></div>'+
+    '</div>'+
+    '<div class="field"><label>Status</label><select id="h-st">'+['active','pending','suspended'].map(function(s){return '<option value="'+s+'"'+(h.status===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>';
+  var foot =
+    (id ? '<button class="btn danger" style="margin-right:auto" onclick="deleteHotel(\''+id+'\')">🗑 Διαγραφή</button>':'')+
+    '<button class="btn" onclick="closeModal()">Άκυρο</button>'+
+    '<button class="btn primary" onclick="saveHotel('+(id?"'"+id+"'":'null')+')">Αποθήκευση</button>';
+  openModal(id?'Επεξεργασία ξενοδοχείου':'Νέο ξενοδοχείο', body, foot, {lg:true});
+}
+function saveHotel(id){
+  var data = {
+    name: $('#h-name').value.trim(),
+    islandId: $('#h-island').value,
+    rooms: parseInt($('#h-rooms').value)||0,
+    commissionPct: parseFloat($('#h-comm').value)||0,
+    contactName: $('#h-cn').value.trim(),
+    email: $('#h-em').value.trim(),
+    phone: $('#h-ph').value.trim(),
+    status: $('#h-st').value
+  };
+  if(!data.name){ toast('Συμπλήρωσε όνομα'); return }
+  if(id){ JMK.update('hotels', id, data); }
+  else { JMK.add('hotels', data); }
+  closeModal(); refreshNavCounts(); goPage('hotels'); toast('Αποθηκεύτηκε');
+}
+function approveHotel(id){
+  JMK.update('hotels', id, { status:'active' });
+  goPage('hotels'); toast('Εγκρίθηκε ξενοδοχείο');
+}
+function deleteHotel(id){
+  if(!confirm('Διαγραφή ξενοδοχείου;')) return;
+  JMK.remove('hotels', id);
+  closeModal(); refreshNavCounts(); goPage('hotels');
+}
+
+/* ---------- PARTNERS ---------- */
+pages.partners = function(root){
+  var partners = JMK.get('partners');
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Συνεργάτες</h2><div class="sub">Πάροχοι δραστηριοτήτων · KYC, εγκρίσεις, αξιολογήσεις</div></div>'+
+      '<div class="actions"><button class="btn primary" onclick="editPartner()">+ Νέος συνεργάτης</button></div>'+
+    '</div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr>'+
+        '<th>Συνεργάτης</th><th>Νησί</th><th>Κατηγορία</th><th class="right">Δραστηριότητες</th><th class="right">Έσοδα</th><th>Rating</th><th>KYC</th><th></th>'+
+      '</tr></thead><tbody>'+
+        partners.map(function(p){
+          var isl = JMK.find('islands', p.islandId)||{name:'—'};
+          var actN = JMK.activitiesByPartner(p.id).length;
+          return '<tr class="row" onclick="editPartner(\''+p.id+'\')">'+
+            '<td><div class="av gold">'+escapeHTML(fmt.initials(p.name))+'</div><b>'+escapeHTML(p.name)+'</b><div style="font-size:11px;color:var(--muted);margin-left:38px;margin-top:-14px">'+escapeHTML(p.email||'')+'</div></td>'+
+            '<td>'+escapeHTML(isl.name)+'</td>'+
+            '<td>'+(p.categoryId?(JMK.find('categories',p.categoryId)||{}).name||'—':'—')+'</td>'+
+            '<td class="right num">'+actN+'</td>'+
+            '<td class="right num">'+fmt.eur(p.totalEarnings||0)+'</td>'+
+            '<td>'+(p.rating?'★ '+p.rating.toFixed(1):'—')+'</td>'+
+            '<td>'+statusPill(p.kycStatus)+'</td>'+
+            '<td class="right">'+
+              (p.kycStatus==='pending' ? '<button class="btn sm primary" onclick="event.stopPropagation();approvePartner(\''+p.id+'\')">Έγκριση</button>' :
+               '<button class="btn sm" onclick="event.stopPropagation();editPartner(\''+p.id+'\')">Επεξ.</button>')+
+            '</td>'+
+          '</tr>';
+        }).join('') +
+      '</tbody></table>'+
+    '</div>';
+};
+function editPartner(id){
+  var p = id ? JMK.find('partners', id) : { name:'', islandId:'', categoryId:'', email:'', phone:'', kycStatus:'pending', rating:0, totalEarnings:0 };
+  if(!p) return;
+  var isls = JMK.get('islands');
+  var cats = JMK.get('categories');
+  var body =
+    '<div class="row-form">'+
+      '<div class="field"><label>Όνομα *</label><input id="p-name" value="'+escapeHTML(p.name)+'"></div>'+
+      '<div class="field"><label>Νησί</label><select id="p-island">'+isls.map(function(i){return '<option value="'+i.id+'"'+(p.islandId===i.id?' selected':'')+'>'+escapeHTML(i.name)+'</option>'}).join('')+'</select></div>'+
+    '</div>'+
+    '<div class="field"><label>Κατηγορία</label><select id="p-cat"><option value="">—</option>'+cats.map(function(c){return '<option value="'+c.id+'"'+(p.categoryId===c.id?' selected':'')+'>'+c.icon+' '+escapeHTML(c.name)+'</option>'}).join('')+'</select></div>'+
+    '<div class="row-form">'+
+      '<div class="field"><label>Email</label><input id="p-em" type="email" value="'+escapeHTML(p.email||'')+'"></div>'+
+      '<div class="field"><label>Τηλέφωνο</label><input id="p-ph" value="'+escapeHTML(p.phone||'')+'"></div>'+
+    '</div>'+
+    '<div class="row-form">'+
+      '<div class="field"><label>KYC Status</label><select id="p-kyc">'+['verified','pending','rejected'].map(function(s){return '<option value="'+s+'"'+(p.kycStatus===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>'+
+      '<div class="field"><label>Rating</label><input id="p-rt" type="number" min="0" max="5" step="0.1" value="'+(p.rating||0)+'"></div>'+
+    '</div>';
+  var foot =
+    (id ? '<button class="btn danger" style="margin-right:auto" onclick="deletePartner(\''+id+'\')">🗑 Διαγραφή</button>':'')+
+    '<button class="btn" onclick="closeModal()">Άκυρο</button>'+
+    '<button class="btn primary" onclick="savePartner('+(id?"'"+id+"'":'null')+')">Αποθήκευση</button>';
+  openModal(id?'Επεξεργασία συνεργάτη':'Νέος συνεργάτης', body, foot, {lg:true});
+}
+function savePartner(id){
+  var data = {
+    name: $('#p-name').value.trim(),
+    islandId: $('#p-island').value,
+    categoryId: $('#p-cat').value,
+    email: $('#p-em').value.trim(),
+    phone: $('#p-ph').value.trim(),
+    kycStatus: $('#p-kyc').value,
+    rating: parseFloat($('#p-rt').value)||0
+  };
+  if(!data.name){ toast('Συμπλήρωσε όνομα'); return }
+  if(id){ JMK.update('partners', id, data); }
+  else { JMK.add('partners', data); }
+  closeModal(); refreshNavCounts(); goPage('partners'); toast('Αποθηκεύτηκε');
+}
+function approvePartner(id){
+  JMK.update('partners', id, { kycStatus:'verified' });
+  refreshNavCounts(); goPage('partners'); toast('Εγκρίθηκε KYC');
+}
+function deletePartner(id){
+  if(!confirm('Διαγραφή συνεργάτη;')) return;
+  JMK.remove('partners', id);
+  closeModal(); refreshNavCounts(); goPage('partners');
+}
+
+/* ---------- KYC QUEUE ---------- */
+pages.kyc = function(root){
+  var pending = JMK.get('partners').filter(function(p){return p.kycStatus !== 'verified'});
+  root.innerHTML =
+    '<div class="page-head"><div><h2>KYC Queue</h2><div class="sub">'+pending.length+' συνεργάτες προς έγκριση/απόρριψη</div></div></div>'+
+    '<div class="grid g2">'+
+      (pending.length ? pending.map(function(p){
+        var isl = JMK.find('islands', p.islandId)||{name:'—'};
+        var cat = JMK.find('categories', p.categoryId)||{name:'—',icon:''};
+        return '<div class="card">'+
+          '<div class="between" style="margin-bottom:10px"><div style="display:flex;gap:10px;align-items:center"><div class="av lg gold">'+escapeHTML(fmt.initials(p.name))+'</div><div><h3 style="margin:0;font-size:15px">'+escapeHTML(p.name)+'</h3><div style="font-size:12px;color:var(--muted)">'+escapeHTML(p.email||'')+' · '+escapeHTML(p.phone||'')+'</div></div></div>'+statusPill(p.kycStatus)+'</div>'+
+          '<div style="font-size:13px;margin-bottom:14px">📍 '+escapeHTML(isl.name)+' · '+cat.icon+' '+escapeHTML(cat.name)+'</div>'+
+          '<div style="background:#FAFBFC;border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted)">📎 ΑΦΜ, Πιστοποιητικά, Φωτο ID — όλα τα έγγραφα έχουν παραληφθεί.</div>'+
+          '<div class="group"><button class="btn primary" onclick="approvePartner(\''+p.id+'\')">✓ Έγκριση</button>'+
+          '<button class="btn danger" onclick="rejectPartner(\''+p.id+'\')">✕ Απόρριψη</button>'+
+          '<button class="btn" onclick="editPartner(\''+p.id+'\')">Λεπτομέρειες</button></div>'+
+        '</div>';
+      }).join('') : '<div class="card empty"><div class="ic">🎉</div><div class="tt">Όλοι σε τάξη!</div>Καμία εκκρεμότητα KYC.</div>')+
+    '</div>';
+};
+function rejectPartner(id){
+  if(!confirm('Απόρριψη KYC συνεργάτη;')) return;
+  JMK.update('partners', id, { kycStatus:'rejected' });
+  refreshNavCounts(); goPage('kyc'); toast('Απορρίφθηκε');
+}
+
+/* ---------- ACTIVITIES ---------- */
+pages.activities = function(root){
+  var acts = JMK.get('activities');
+  var filt = root._filter || 'all';
+  var counts = {
+    all: acts.length,
+    review: acts.filter(function(a){return a.status==='review'}).length,
+    active: acts.filter(function(a){return a.status==='active'}).length,
+    rejected: acts.filter(function(a){return a.status==='rejected'}).length
+  };
+  var filtered = filt==='all' ? acts : acts.filter(function(a){return a.status===filt});
+
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Δραστηριότητες</h2><div class="sub">Moderation, τιμολόγηση, διαθεσιμότητα</div></div></div>'+
+    '<div class="tabs">'+
+      [['all','Όλες'],['review','Έλεγχος'],['active','Ενεργές'],['rejected','Απορρίφθηκαν']].map(function(t){
+        return '<button class="tab '+(filt===t[0]?'on':'')+'" onclick="filterActs(\''+t[0]+'\')">'+t[1]+' ('+counts[t[0]]+')</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="stack" id="acts-list">'+
+      (filtered.length ? filtered.map(function(a){
+        var part = JMK.find('partners',a.partnerId)||{name:'—'};
+        var cat = JMK.find('categories',a.categoryId)||{icon:'?',name:'—'};
+        return '<div class="card act-card">'+
+          '<div class="img">'+cat.icon+'</div>'+
+          '<div class="body">'+
+            '<div class="between"><h4>'+escapeHTML(a.title)+'</h4>'+statusPill(a.status)+'</div>'+
+            '<div class="meta">'+escapeHTML(part.name)+' · '+escapeHTML(cat.name)+' · '+escapeHTML(a.duration||'')+'</div>'+
+            '<div style="font-size:12.5px;color:var(--ink);margin-bottom:8px">'+escapeHTML(a.description||'').slice(0,160)+'</div>'+
+            '<div class="group"><span class="pill blue">'+fmt.eur(a.priceFrom||0)+' / άτομο</span>'+
+            '<span class="pill gray">Max '+(a.maxPax||'—')+' άτομα</span>'+
+            (a.rating? '<span class="pill gold">★ '+a.rating.toFixed(1)+'</span>':'')+'</div>'+
+          '</div>'+
+          '<div class="actions">'+
+            (a.status==='review' ? '<button class="btn sm primary" onclick="approveActivity(\''+a.id+'\')">✓ Έγκριση</button><button class="btn sm danger" onclick="rejectActivity(\''+a.id+'\')">✕</button>'
+              : '<button class="btn sm" onclick="editActivity(\''+a.id+'\')">Επεξ.</button>')+
+          '</div>'+
+        '</div>';
+      }).join('') : '<div class="card empty"><div class="ic">🚤</div>Καμία δραστηριότητα</div>')+
+    '</div>';
+};
+function filterActs(f){
+  var root = $('#mainArea'); root._filter = f; pages.activities(root);
+}
+function approveActivity(id){ JMK.update('activities',id,{status:'active'}); goPage('activities'); toast('Εγκρίθηκε') }
+function rejectActivity(id){ if(!confirm('Απόρριψη;')) return; JMK.update('activities',id,{status:'rejected'}); goPage('activities'); toast('Απορρίφθηκε') }
+function editActivity(id){
+  var a = JMK.find('activities',id); if(!a) return;
+  var cats = JMK.get('categories');
+  var body =
+    '<div class="field"><label>Τίτλος *</label><input id="a-tt" value="'+escapeHTML(a.title)+'"></div>'+
+    '<div class="row-form">'+
+      '<div class="field"><label>Κατηγορία</label><select id="a-cat">'+cats.map(function(c){return '<option value="'+c.id+'"'+(a.categoryId===c.id?' selected':'')+'>'+c.icon+' '+escapeHTML(c.name)+'</option>'}).join('')+'</select></div>'+
+      '<div class="field"><label>Διάρκεια</label><input id="a-dur" value="'+escapeHTML(a.duration||'')+'"></div>'+
+    '</div>'+
+    '<div class="row-form">'+
+      '<div class="field"><label>Τιμή από (€)</label><input id="a-pr" type="number" value="'+(a.priceFrom||0)+'"></div>'+
+      '<div class="field"><label>Max άτομα</label><input id="a-mx" type="number" value="'+(a.maxPax||0)+'"></div>'+
+    '</div>'+
+    '<div class="field"><label>Περιγραφή</label><textarea id="a-de" rows="4">'+escapeHTML(a.description||'')+'</textarea></div>'+
+    '<div class="field"><label>Status</label><select id="a-st">'+['active','review','rejected','draft'].map(function(s){return '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>';
+  var foot = '<button class="btn" onclick="closeModal()">Άκυρο</button><button class="btn primary" onclick="saveActivity(\''+id+'\')">Αποθήκευση</button>';
+  openModal('Επεξεργασία · '+a.title, body, foot, {lg:true});
+}
+function saveActivity(id){
+  JMK.update('activities', id, {
+    title: $('#a-tt').value.trim(),
+    categoryId: $('#a-cat').value,
+    duration: $('#a-dur').value.trim(),
+    priceFrom: parseFloat($('#a-pr').value)||0,
+    maxPax: parseInt($('#a-mx').value)||0,
+    description: $('#a-de').value.trim(),
+    status: $('#a-st').value
+  });
+  closeModal(); goPage('activities'); toast('Αποθηκεύτηκε');
+}
+
+/* ---------- GUESTS ---------- */
+pages.guests = function(root){
+  var gs = JMK.get('guests');
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Επισκέπτες</h2><div class="sub">'+gs.length+' guests · 100% privacy compliant</div></div></div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr><th>Όνομα</th><th>Ξενοδοχείο</th><th>Δωμάτιο</th><th>Check-in</th><th>Check-out</th><th class="right">Κρατήσεις</th><th class="right">Δαπάνη</th></tr></thead>'+
+      '<tbody>'+gs.map(function(g){
+        var hot = JMK.find('hotels',g.hotelId)||{name:'—'};
+        var bks = JMK.bookingsByGuest(g.id);
+        var spend = bks.reduce(function(a,b){return a+(b.total||0)},0);
+        return '<tr><td><div class="av gray">'+escapeHTML(fmt.initials(g.name))+'</div>'+escapeHTML(g.name)+'</td>'+
+          '<td>'+escapeHTML(hot.name)+'</td><td>'+escapeHTML(g.room||'—')+'</td>'+
+          '<td>'+fmt.date(g.checkIn)+'</td><td>'+fmt.date(g.checkOut)+'</td>'+
+          '<td class="right num">'+bks.length+'</td><td class="right num">'+fmt.eur(spend)+'</td></tr>';
+      }).join('')+'</tbody></table>'+
+    '</div>';
+};
+
+/* ---------- BOOKINGS ---------- */
+pages.bookings = function(root){
+  var bks = JMK.get('bookings');
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Κρατήσεις</h2><div class="sub">'+bks.length+' σύνολο</div></div>'+
+      '<div class="actions"><button class="btn">📤 Export</button></div>'+
+    '</div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr><th>#</th><th>Επισκέπτης</th><th>Δραστηριότητα</th><th>Συνεργάτης</th><th>Ημ/νία</th><th class="right">Σύνολο</th><th>Status</th></tr></thead>'+
+      '<tbody>'+bks.slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0)}).map(function(b){
+        var g = JMK.find('guests',b.guestId)||{name:'—'};
+        var a = JMK.find('activities',b.activityId)||{title:'—'};
+        var p = JMK.find('partners',b.partnerId)||{name:'—'};
+        return '<tr class="row" onclick="openBooking(\''+b.id+'\')">'+
+          '<td><b>'+escapeHTML(b.code||b.id)+'</b></td>'+
+          '<td>'+escapeHTML(g.name)+'</td>'+
+          '<td><div class="truncate" style="max-width:200px">'+escapeHTML(a.title)+'</div></td>'+
+          '<td>'+escapeHTML(p.name)+'</td>'+
+          '<td>'+fmt.date(b.date)+'</td>'+
+          '<td class="right num">'+fmt.eur(b.total)+'</td>'+
+          '<td>'+statusPill(b.status)+'</td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>'+
+    '</div>';
+};
+function openBooking(id){
+  var b = JMK.find('bookings',id); if(!b) return;
+  var g = JMK.find('guests',b.guestId)||{name:'—'};
+  var act = JMK.find('activities',b.activityId)||{title:'—'};
+  var p = JMK.find('partners',b.partnerId)||{name:'—'};
+  var h = JMK.find('hotels',b.hotelId)||{name:'—'};
+  var st = JMK.settings();
+  var sp = JMK.computeSplit(b.total||0, h.commissionPct||st.defaultHotelCommissionPct);
+  var body =
+    '<div class="grid g2" style="margin-bottom:14px">'+
+      '<div><div style="font-size:11px;color:var(--muted)">Επισκέπτης</div><div style="font-weight:600">'+escapeHTML(g.name)+'</div><div style="font-size:12px;color:var(--muted)">'+escapeHTML(h.name)+(g.room?' · Δωμ. '+escapeHTML(g.room):'')+'</div></div>'+
+      '<div><div style="font-size:11px;color:var(--muted)">Συνεργάτης</div><div style="font-weight:600">'+escapeHTML(p.name)+'</div><div style="font-size:12px;color:var(--muted)">'+escapeHTML(act.title)+'</div></div>'+
+    '</div>'+
+    '<hr class="sep">'+
+    '<div class="grid g2">'+
+      '<div>'+
+        '<h4 style="margin:0 0 8px">Κατάσταση</h4>'+
+        '<div class="timeline">'+
+          '<div class="step done"><div class="tt">Αίτημα</div><div class="tm">'+fmt.date(b.createdAt)+'</div></div>'+
+          '<div class="step '+(['confirmed','paid','completed'].indexOf(b.status)>=0?'done':'')+'"><div class="tt">Επιβεβαίωση</div></div>'+
+          '<div class="step '+(['paid','completed'].indexOf(b.status)>=0?'done':'')+'"><div class="tt">Πληρωμή</div></div>'+
+          '<div class="step '+(b.status==='completed'?'done':'')+'"><div class="tt">Ολοκλήρωση</div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div>'+
+        '<h4 style="margin:0 0 8px">Διανομή ποσού</h4>'+
+        '<table class="tbl" style="font-size:12px">'+
+          '<tr><td>Σύνολο</td><td class="right num"><b>'+fmt.eur2(b.total||0)+'</b></td></tr>'+
+          '<tr><td>Stripe ('+st.stripeFeePct+'%)</td><td class="right num">-'+fmt.eur2(sp.stripeFee)+'</td></tr>'+
+          '<tr><td>Συνεργάτης ('+st.partnerCutPct+'%)</td><td class="right num">'+fmt.eur2(sp.partnerCut)+'</td></tr>'+
+          '<tr><td>Ξενοδοχείο ('+(h.commissionPct||st.defaultHotelCommissionPct).toFixed(1)+'%)</td><td class="right num">'+fmt.eur2(sp.hotelCut)+'</td></tr>'+
+          '<tr><td>JMK ('+st.jmkCommissionPct+'%)</td><td class="right num"><b>'+fmt.eur2(sp.jmkCut)+'</b></td></tr>'+
+          '<tr><td>Reserve ('+st.reservePct+'%)</td><td class="right num">'+fmt.eur2(sp.reserve)+'</td></tr>'+
+        '</table>'+
+      '</div>'+
+    '</div>';
+  var foot =
+    (b.status==='pending' ? '<button class="btn primary" onclick="confirmBooking(\''+id+'\')">Επιβεβαίωση</button>':'') +
+    (b.status==='paid' ? '<button class="btn primary" onclick="completeBooking(\''+id+'\')">Ολοκλήρωση</button>':'') +
+    '<button class="btn" onclick="closeModal()">Κλείσιμο</button>';
+  openModal('Κράτηση '+(b.code||b.id), body, foot, {lg:true});
+}
+function confirmBooking(id){ JMK.update('bookings',id,{status:'confirmed'}); closeModal(); goPage('bookings') }
+function completeBooking(id){ JMK.update('bookings',id,{status:'completed'}); closeModal(); goPage('bookings') }
+
+/* ---------- PAYOUTS ---------- */
+pages.payouts = function(root){
+  var ps = JMK.get('payouts');
+  var st = JMK.settings();
+  var totalScheduled = ps.filter(function(x){return x.status==='scheduled'}).reduce(function(a,b){return a+(b.amount||0)},0);
+  var totalSent = ps.filter(function(x){return x.status==='sent'}).reduce(function(a,b){return a+(b.amount||0)},0);
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Πληρωμές & Commissions</h2><div class="sub">Payout κύκλοι · ημέρες πληρωμής: '+(st.payoutDays||[]).join(', ')+'</div></div></div>'+
+    '<div class="grid g3" style="margin-bottom:18px">'+
+      kpiCard('Προγραμματισμένες', fmt.eur(totalScheduled), '', '', '⏳')+
+      kpiCard('Στάλθηκαν (μήνα)', fmt.eur(totalSent), '', '', '✅')+
+      kpiCard('Reserve συνολικά', fmt.eur(totalSent*(st.reservePct/100)), '', '', '🛡️')+
+    '</div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr><th>#</th><th>Προς</th><th>Τύπος</th><th>Περίοδος</th><th>Ημ/νία</th><th class="right">Ποσό</th><th>Status</th><th></th></tr></thead>'+
+      '<tbody>'+ps.map(function(p){
+        var who = (p.partnerId? JMK.find('partners',p.partnerId): JMK.find('hotels',p.hotelId)) || {name:'—'};
+        return '<tr><td><b>'+escapeHTML(p.id)+'</b></td>'+
+          '<td>'+escapeHTML(who.name)+'</td>'+
+          '<td>'+(p.partnerId?'Συνεργάτης':'Ξενοδοχείο')+'</td>'+
+          '<td>'+escapeHTML(p.period||'—')+'</td>'+
+          '<td>'+fmt.date(p.scheduledFor||p.sentAt)+'</td>'+
+          '<td class="right num">'+fmt.eur(p.amount)+'</td>'+
+          '<td>'+statusPill(p.status)+'</td>'+
+          '<td class="right">'+(p.status==='scheduled'?'<button class="btn sm primary" onclick="sendPayout(\''+p.id+'\')">Αποστολή</button>':'')+'</td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>'+
+    '</div>';
+};
+function sendPayout(id){
+  JMK.update('payouts',id,{status:'sent', sentAt: Date.now()});
+  goPage('payouts'); toast('Πληρωμή εστάλη');
+}
+
+/* ---------- ANTI-BYPASS ALERTS ---------- */
+pages.alerts = function(root){
+  var ms = JMK.get('messages').filter(function(m){return m.flagged});
+  root.innerHTML =
+    '<div class="page-head"><div><h2>⚠️ Anti-bypass alerts</h2><div class="sub">Μηνύματα με ύποπτο περιεχόμενο (τηλέφωνα, emails, εξωτερικές πληρωμές)</div></div></div>'+
+    (ms.length ? ms.map(function(m){
+      var redacted = (m.original||m.text||'').replace(/(\+?\d[\d\s\-().]{6,}\d)/g, '<span class="red">$1</span>').replace(/([\w.+-]+@[\w-]+\.[\w.-]+)/g,'<span class="red">$1</span>');
+      var who = (m.fromRole==='partner'? JMK.find('partners',m.fromId): JMK.find('guests',m.fromId)) || {name:'—'};
+      return '<div class="alert-row">'+
+        '<div class="h"><b>🚩 '+escapeHTML(m.reason||'Suspicious content')+'</b><span class="pill red dot">'+(m.resolved?'resolved':'open')+'</span><span style="margin-left:auto;font-size:11px;color:var(--muted)">'+fmt.date(m.createdAt)+'</span></div>'+
+        '<div style="font-size:12.5px;margin-bottom:8px">Από <b>'+escapeHTML(who.name)+'</b> ('+escapeHTML(m.fromRole||'')+')</div>'+
+        '<div class="src">'+redacted+'</div>'+
+        (m.resolved?'':'<div class="group" style="margin-top:10px"><button class="btn sm primary" onclick="resolveAlert(\''+m.id+'\')">✓ Resolved</button>'+
+        '<button class="btn sm danger" onclick="banSender(\''+m.fromRole+'\',\''+m.fromId+'\')">🚫 Ban χρήστη</button></div>')+
+      '</div>';
+    }).join('') : '<div class="card empty"><div class="ic">✅</div><div class="tt">Καθαρά</div>Καμία ειδοποίηση anti-bypass.</div>');
+};
+function resolveAlert(id){
+  JMK.update('messages', id, { resolved:true });
+  refreshNavCounts(); goPage('alerts'); toast('Resolved');
+}
+function banSender(role, id){
+  if(!confirm('Ban χρήστη;')) return;
+  if(role==='partner') JMK.update('partners', id, { kycStatus:'rejected' });
+  if(role==='guest') JMK.update('guests', id, { banned:true });
+  refreshNavCounts(); goPage('alerts'); toast('Έγινε ban');
+}
+
+/* ---------- SETTINGS ---------- */
+pages.settings = function(root){
+  var s = JMK.settings();
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Ρυθμίσεις πλατφόρμας</h2><div class="sub">Commissions, currency, languages, security</div></div></div>'+
+    '<div class="grid g2">'+
+      '<div class="card">'+
+        '<h3 class="sec-tt">💎 Commissions</h3>'+
+        '<div class="row-form">'+
+          '<div class="field"><label>JMK %</label><input id="s-jmk" type="number" step="0.1" value="'+s.jmkCommissionPct+'"></div>'+
+          '<div class="field"><label>Default Hotel %</label><input id="s-hot" type="number" step="0.1" value="'+s.defaultHotelCommissionPct+'"></div>'+
+        '</div>'+
+        '<div class="row-form">'+
+          '<div class="field"><label>Partner %</label><input id="s-par" type="number" step="0.1" value="'+s.partnerCutPct+'"></div>'+
+          '<div class="field"><label>Reserve %</label><input id="s-res" type="number" step="0.1" value="'+s.reservePct+'"></div>'+
+        '</div>'+
+        '<div class="field"><label>Stripe fee %</label><input id="s-str" type="number" step="0.1" value="'+s.stripeFeePct+'"></div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3 class="sec-tt">🌍 Γλώσσες & νόμισμα</h3>'+
+        '<div class="field"><label>Νόμισμα</label><select id="s-cur"><option'+(s.currency==='EUR'?' selected':'')+'>EUR</option><option'+(s.currency==='USD'?' selected':'')+'>USD</option><option'+(s.currency==='GBP'?' selected':'')+'>GBP</option></select></div>'+
+        '<div class="field"><label>Διαθέσιμες γλώσσες</label>'+
+          '<div class="chips" id="s-langs">'+
+            ['el','en','de','fr','it','es','tr','ru'].map(function(l){
+              var on = (s.languages||[]).indexOf(l)>=0;
+              return '<button type="button" class="chip'+(on?' on':'')+'" data-lang="'+l+'">'+l.toUpperCase()+'</button>';
+            }).join('')+
+          '</div>'+
+        '</div>'+
+        '<div class="field"><label>Ημέρες πληρωμής</label><input id="s-pay" value="'+(s.payoutDays||[]).join(',')+'"><div class="help">π.χ. 1,15</div></div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3 class="sec-tt">🛡️ Ασφάλεια</h3>'+
+        '<label class="check"><input type="checkbox" id="s-kyc" '+(s.kycRequired?'checked':'')+'> Υποχρεωτικό KYC συνεργατών</label>'+
+        '<label class="check"><input type="checkbox" id="s-anti" '+(s.antiBypassEnabled?'checked':'')+'> Anti-bypass detection</label>'+
+        '<label class="check"><input type="checkbox" id="s-wx" '+(s.autoCancelBadWeather?'checked':'')+'> Auto-cancel σε κακό καιρό</label>'+
+      '</div>'+
+      '<div class="card">'+
+        '<h3 class="sec-tt">⚙️ Σύστημα</h3>'+
+        '<div class="between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>Έκδοση demo</span><b>v1.0.0</b></div>'+
+        '<div class="between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>Storage</span><b>localStorage</b></div>'+
+        '<div class="between" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>Records</span><b>'+ countAll() +'</b></div>'+
+        '<div class="group" style="margin-top:14px"><button class="btn" onclick="exportData()">📤 Export JSON</button>'+
+        '<button class="btn danger" onclick="resetData()">↻ Reset demo</button></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="margin-top:18px;display:flex;justify-content:flex-end"><button class="btn primary" onclick="saveSettings()">Αποθήκευση ρυθμίσεων</button></div>';
+  $('#s-langs').addEventListener('click', function(e){
+    var b = e.target.closest('.chip'); if(b) b.classList.toggle('on');
+  });
+};
+function saveSettings(){
+  var langs = $$('#s-langs .chip.on').map(function(c){return c.dataset.lang});
+  var pay = $('#s-pay').value.split(',').map(function(x){return parseInt(x.trim())}).filter(function(x){return !isNaN(x)});
+  JMK.settings({
+    jmkCommissionPct: parseFloat($('#s-jmk').value)||0,
+    defaultHotelCommissionPct: parseFloat($('#s-hot').value)||0,
+    partnerCutPct: parseFloat($('#s-par').value)||0,
+    reservePct: parseFloat($('#s-res').value)||0,
+    stripeFeePct: parseFloat($('#s-str').value)||0,
+    currency: $('#s-cur').value,
+    languages: langs,
+    payoutDays: pay,
+    kycRequired: $('#s-kyc').checked,
+    antiBypassEnabled: $('#s-anti').checked,
+    autoCancelBadWeather: $('#s-wx').checked
+  });
+  toast('Ρυθμίσεις αποθηκεύτηκαν');
+}
+function countAll(){
+  var n = 0;
+  ['islands','categories','hotels','partners','activities','guests','bookings','payouts','messages']
+    .forEach(function(c){ n += JMK.get(c).length });
+  return n;
+}
+function exportData(){
+  var data = {};
+  ['islands','categories','hotels','partners','activities','guests','bookings','payouts','messages']
+    .forEach(function(c){ data[c] = JMK.get(c) });
+  data.settings = JMK.settings();
+  var blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download='jmk_export.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- PARTNER REQUESTS (leave / pause) ---------- */
+pages.requests = function(root){
+  var reqs = JMK.get('partnerRequests').slice().sort(function(a,b){return new Date(b.requestedAt||b.createdAt)-new Date(a.requestedAt||a.createdAt)});
+  var open = reqs.filter(function(r){return r.status!=='resolved'});
+  var done = reqs.filter(function(r){return r.status==='resolved'});
+
+  function card(r){
+    var p = JMK.find('partners', r.partnerId) || {name:'—', businessName:''};
+    var cat = JMK.find('categories', p.category) || {icon:'',name:'—'};
+    var isl = JMK.find('islands', p.islandId) || {name:'—'};
+    var hotelsHTML = (r.affectedHotels||[]).map(function(hid){
+      var h = JMK.find('hotels', hid) || {name:hid};
+      var notified = (r.notifiedHotels||[]).indexOf(hid) >= 0;
+      return '<span class="pill '+(notified?'green':'gold')+' dot" style="margin:2px 4px 2px 0">'+escapeHTML(h.name)+(notified?' ✓':' ⏳')+'</span>';
+    }).join('');
+    var replacementHTML = '';
+    if (r.replacementId){
+      var rep = JMK.find('partners', r.replacementId) || {name:r.replacementId};
+      replacementHTML = '<div style="background:#E6F6EC;border:1px solid #1F8F4A;color:#1F6F3D;padding:9px 12px;border-radius:9px;font-size:12.5px;margin-top:10px"><b>✓ Αντικαταστάτης:</b> '+escapeHTML(rep.businessName||rep.name)+'</div>';
+    }
+    var typeLbl = r.type === 'hotel_replacement' ? 'Αίτηση από ξενοδοχείο' : r.type === 'leave' ? 'Αποχώρηση' : r.type === 'pause' ? 'Παύση' : escapeHTML(r.type);
+    var requester = r.requestedBy ? (JMK.find('hotels', r.requestedBy)||{name:r.requestedByName||r.requestedBy}) : null;
+    return '<div class="card" style="margin-bottom:14px">'+
+      '<div class="between" style="margin-bottom:8px">'+
+        '<div><div class="av gold">'+escapeHTML(fmt.initials(p.name))+'</div><b>'+escapeHTML(p.businessName||p.name)+'</b> '+
+        '<span style="color:var(--muted);font-size:11px">· '+cat.icon+' '+escapeHTML(cat.name)+' · '+escapeHTML(isl.name)+'</span></div>'+
+        '<div class="group">'+
+          '<span class="pill '+(r.type==='hotel_replacement'?'red':'gold')+' dot">'+typeLbl+'</span>'+
+          '<span class="pill '+(r.status==='resolved'?'green':r.status==='in_progress'?'blue':'gold')+' dot">'+escapeHTML(r.status)+'</span>'+
+        '</div>'+
+      '</div>'+
+      (requester ? '<div style="font-size:12.5px;color:var(--ink);margin-bottom:6px">📩 Αίτηση από <b>'+escapeHTML(requester.name)+'</b></div>' : '')+
+      '<div style="font-size:13px;margin-bottom:10px;color:var(--ink);font-style:italic">"'+escapeHTML(r.reason||'—')+'"</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">📅 Ζητήθηκε: '+fmt.date(r.requestedAt||r.createdAt)+'</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">🏨 Επηρεαζόμενα ξενοδοχεία:</div>'+
+      '<div>'+(hotelsHTML||'<span style="color:var(--muted);font-size:12px">—</span>')+'</div>'+
+      replacementHTML +
+      '<div class="group" style="margin-top:14px">'+
+        (r.status!=='resolved' ?
+          '<button class="btn primary" onclick="assignReplacement(\''+r.id+'\')">🔄 Όρισε αντικαταστάτη</button>'+
+          '<button class="btn" onclick="updateRequest(\''+r.id+'\',\'in_progress\')">Σε εξέλιξη</button>'+
+          '<button class="btn" onclick="updateRequest(\''+r.id+'\',\'resolved\')">✓ Επιλύθηκε</button>'
+          : '<button class="btn" onclick="updateRequest(\''+r.id+'\',\'open\')">↻ Επανάνοιγμα</button>')+
+        '<button class="btn" onclick="notifyAffectedHotels(\''+r.id+'\')">📣 Ειδοποίησε ξανά τα ξενοδοχεία</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  root.innerHTML =
+    '<div class="page-head"><div><h2>🚪 Αιτήσεις partners</h2><div class="sub">Συνεργάτες που ζήτησαν αποχώρηση ή παύση. Εδώ ορίζεις αντικαταστάτη και ειδοποιείς τα ξενοδοχεία.</div></div></div>'+
+    '<div class="grid g3" style="margin-bottom:18px">'+
+      kpiCard('Ανοιχτές αιτήσεις', open.filter(function(r){return r.status==='open'}).length, '', '', '🟡')+
+      kpiCard('Σε εξέλιξη', open.filter(function(r){return r.status==='in_progress'}).length, '', '', '🔄')+
+      kpiCard('Επιλύθηκαν', done.length, '', '', '✅')+
+    '</div>'+
+    '<h3 class="sec-tt">Ενεργές αιτήσεις</h3>'+
+    (open.length ? open.map(card).join('') : '<div class="card empty"><div class="ic">🎉</div>Καμία ανοιχτή αίτηση</div>')+
+    (done.length ? '<h3 class="sec-tt" style="margin-top:24px">Ιστορικό</h3>'+done.map(card).join('') : '');
+};
+
+function assignReplacement(reqId){
+  var r = JMK.find('partnerRequests', reqId);
+  if (!r) return;
+  var leaver = JMK.find('partners', r.partnerId) || {};
+  // suggest partners on same island/category
+  var candidates = JMK.where('partners', function(p){
+    return p.id !== r.partnerId &&
+           p.islandId === leaver.islandId &&
+           p.category === leaver.category &&
+           p.status === 'approved';
+  });
+  // also include same island, any category, as fallback
+  if (candidates.length === 0) {
+    candidates = JMK.where('partners', function(p){
+      return p.id !== r.partnerId && p.islandId === leaver.islandId && p.status === 'approved';
+    });
+  }
+  var body = '<p style="margin:0 0 14px;font-size:13.5px;color:var(--muted)">Διάλεξε partner που θα καλύψει τη θέση του <b>'+escapeHTML(leaver.businessName||leaver.name)+'</b> ('+escapeHTML((JMK.find('categories',leaver.category)||{}).name||'—')+').</p>'+
+    (candidates.length ? '<div class="stack">'+candidates.map(function(c){
+      return '<div class="card act-card" style="cursor:pointer" onclick="confirmReplacement(\''+reqId+'\',\''+c.id+'\')">'+
+        '<div class="img">'+(JMK.find('categories',c.category)||{icon:'?'}).icon+'</div>'+
+        '<div class="body"><h4>'+escapeHTML(c.businessName||c.name)+'</h4>'+
+          '<div class="meta">★ '+(c.rating||'—')+' · '+(c.reviewCount||0)+' κριτικές · '+fmt.eur(c.totalEarnings||0)+' έσοδα</div>'+
+        '</div>'+
+        '<div class="actions"><button class="btn sm primary">Επιλογή</button></div>'+
+      '</div>';
+    }).join('')+'</div>' : '<div class="empty"><div class="ic">😕</div><div class="tt">Κανείς διαθέσιμος</div>Δεν υπάρχει εγκεκριμένος partner στην ίδια κατηγορία/νησί. Πρόσθεσε νέο από την σελίδα Συνεργάτες.</div>');
+  openModal('Αντικαταστάτης για αίτηση', body, '<button class="btn" onclick="closeModal()">Άκυρο</button>', {lg:true});
+}
+function confirmReplacement(reqId, partnerId){
+  JMK.update('partnerRequests', reqId, { replacementId: partnerId, status: 'resolved' });
+  var r = JMK.find('partnerRequests', reqId);
+  // notify all affected hotels that replacement was found
+  var rep = JMK.find('partners', partnerId) || {};
+  (r.affectedHotels||[]).forEach(function(hid){
+    JMK.add('notifications', {
+      toRole:'hotelier', toId:hid, type:'replacement_found',
+      title:'Αντικαταστάτης βρέθηκε',
+      body: (rep.businessName||rep.name) + ' θα καλύψει την κατηγορία.',
+      read:false, actionable:false, requestId:reqId
+    });
+  });
+  closeModal(); refreshNavCounts(); goPage('requests'); toast('Αντικαταστάτης ορίστηκε ✓');
+}
+function updateRequest(reqId, status){
+  JMK.update('partnerRequests', reqId, { status: status });
+  refreshNavCounts(); goPage('requests'); toast('Status: '+status);
+}
+function notifyAffectedHotels(reqId){
+  var r = JMK.find('partnerRequests', reqId);
+  if (!r) return;
+  var p = JMK.find('partners', r.partnerId) || {};
+  (r.affectedHotels||[]).forEach(function(hid){
+    JMK.add('notifications', {
+      toRole:'hotelier', toId:hid, type:'partner_leave',
+      title:'Υπενθύμιση: συνεργάτης ζητά αποχώρηση',
+      body: (p.businessName||p.name) + ' — η JMK ψάχνει αντικαταστάτη.',
+      read:false, actionable:true, requestId:reqId
+    });
+  });
+  toast('Ειδοποιήθηκαν '+(r.affectedHotels||[]).length+' ξενοδοχεία');
+}
+
+/* ---------- AUDIT ---------- */
+pages.audit = function(root){
+  var log = JMK.get('audit')||[];
+  root.innerHTML =
+    '<div class="page-head"><div><h2>Audit log</h2><div class="sub">Ίχνος αλλαγών</div></div></div>'+
+    '<div class="card" style="padding:0">'+
+      '<table class="tbl"><thead><tr><th>Ώρα</th><th>Χρήστης</th><th>Ενέργεια</th><th>Πόρος</th></tr></thead>'+
+      '<tbody>'+(log.length?log.slice().reverse().slice(0,100).map(function(e){
+        return '<tr><td>'+fmt.date(e.at)+'</td><td>'+escapeHTML(e.who||'admin')+'</td><td>'+escapeHTML(e.action)+'</td><td>'+escapeHTML(e.target||'')+'</td></tr>';
+      }).join(''):'<tr><td colspan="4"><div class="empty"><div class="ic">📓</div>Κενό audit log</div></td></tr>')+'</tbody></table>'+
+    '</div>';
+};
+
+/* ---------- GLOBAL SEARCH ---------- */
+function onGlobalSearch(q){
+  q = (q||'').toLowerCase().trim();
+  if(!q) return;
+  // jump to most relevant page based on query
+  if(q.match(/νησ|island/i)) goPage('islands');
+  else if(q.match(/ξενοδ|hotel/i)) goPage('hotels');
+  else if(q.match(/συνεργ|partner/i)) goPage('partners');
+  else if(q.match(/κρατ|booking/i)) goPage('bookings');
+  else if(q.match(/πληρ|payout/i)) goPage('payouts');
+}
+
+/* ============== BOOT ============== */
+document.addEventListener('DOMContentLoaded', function(){
+  // Auto-login if session exists
+  var sess = JMK.session;
+  if(sess && sess.role==='admin'){
+    $('#login').classList.remove('show');
+    $('#app').classList.add('show');
+    $('#meNm').textContent = sess.name||'Admin';
+    $('#meAv').textContent = fmt.initials(sess.name||'A').toUpperCase();
+    refreshNavCounts();
+    goPage('overview');
+  }
+  // Re-render on cross-tab change
+  JMK.subscribe(function(){ refreshNavCounts(); if($('#app').classList.contains('show')) goPage(currentPage); });
+});
+</script>
+</body>
+</html>
