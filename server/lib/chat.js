@@ -30,17 +30,19 @@ try {
 }
 
 const jwt = require('jsonwebtoken');
+const antibypass = require('./antibypass');
 
-// ---- Anti-bypass detection ----
-const PHONE_RE  = /(\+?\d[\d\s\-().]{6,}\d)/;
-const EMAIL_RE  = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
-const SOCIAL_RE = /\b(whatsapp|whats[\s-]?app|wa\.me|viber|telegram|instagram|insta|@\w+\.com|messenger|signal)\b/i;
-
+// ---- v1 API kept for backwards compatibility ----
 function detectBypass(text) {
-  if (PHONE_RE.test(text))  return { flagged: true, kind: 'phone',  redactedText: text.replace(PHONE_RE, '📵 [αριθμός κρυμμένος]') };
-  if (EMAIL_RE.test(text))  return { flagged: true, kind: 'email',  redactedText: text.replace(EMAIL_RE, '📧 [email κρυμμένο]') };
-  if (SOCIAL_RE.test(text)) return { flagged: true, kind: 'social', redactedText: text.replace(SOCIAL_RE, '🚫 [social κρυμμένο]') };
-  return { flagged: false, kind: null, redactedText: text };
+  const r = antibypass.detect(text);
+  return {
+    flagged: r.flagged,
+    kind: r.kind,
+    redactedText: r.redactedText,
+    riskScore: r.riskScore,
+    severity: r.severity,
+    signals: r.signals
+  };
 }
 
 /**
@@ -164,6 +166,8 @@ function handleMessage(ws, msg, { db, rooms, genId, bumpVersion }) {
     originalText: detection.flagged ? text : undefined,
     flagged: detection.flagged,
     flagKind: detection.kind,
+    riskScore: detection.riskScore,
+    severity: detection.severity,
     readBy: [fromId],
     createdAt: new Date().toISOString()
   };
@@ -173,20 +177,37 @@ function handleMessage(ws, msg, { db, rooms, genId, bumpVersion }) {
   db.prepare('INSERT OR REPLACE INTO collections(collection,id,data,created_at,updated_at) VALUES(?,?,?,?,?)')
     .run(`messages_${bookingId}`, message.id, JSON.stringify(message), now, now);
 
-  // Αν είναι flagged, δημιούργησε record στο flaggedMessages για το admin
+  // Αν είναι flagged, δημιούργησε record στο flaggedMessages για το admin + trigger moderation
   if (detection.flagged) {
+    // Get partnerId from booking για να ξέρει το moderation από ποιον partner ήρθε
+    const bookingRow = db.prepare('SELECT data FROM collections WHERE collection=? AND id=?').get('bookings', bookingId);
+    const booking = bookingRow ? JSON.parse(bookingRow.data) : null;
     const fm = {
       id: genId('fm'),
       bookingId,
       from: fromId,
       fromName,
+      fromRole,
+      partnerId: booking?.partnerId || null,
       text: text, // πλήρες κείμενο για admin review
+      redactedText: detection.redactedText,
       kind: detection.kind,
+      riskScore: detection.riskScore,
+      severity: detection.severity,
+      signals: detection.signals,
       createdAt: message.createdAt,
       resolved: false
     };
     db.prepare('INSERT OR REPLACE INTO collections(collection,id,data,created_at,updated_at) VALUES(?,?,?,?,?)')
       .run('flaggedMessages', fm.id, JSON.stringify(fm), now, now);
+
+    // Auto-moderation: αν είναι partner που στέλνει ύποπτο μήνυμα, τρέξε risk check
+    if (fromRole === 'partner' && booking) {
+      try {
+        const moderation = require('./moderation');
+        moderation.processFlaggedMessage({ db, genId, bumpVersion }, fm);
+      } catch (e) { console.warn('[chat] moderation error:', e.message); }
+    }
   }
 
   bumpVersion();

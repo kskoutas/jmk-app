@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>JMK · Το ταξίδι σου</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: #F8FAFC; font-family: -apple-system, "SF Pro Display", "Segoe UI", sans-serif; min-height: 100vh; }
+
+  /* Phone frame on desktop, full-screen on mobile */
+  .phone-wrap {
+    max-width: 430px;
+    margin: 0 auto;
+    background: #fff;
+    min-height: 100vh;
+    box-shadow: 0 0 40px rgba(15,23,42,.08);
+    overflow-x: hidden;
+  }
+  @media (min-width: 600px) {
+    body { padding: 24px; background: #E2E8F0; }
+    .phone-wrap { border-radius: 24px; min-height: calc(100vh - 48px); }
+  }
+
+  /* Loading */
+  .boot {
+    height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px;
+    text-align: center; color: #64748B;
+  }
+  .boot .logo { font-size: 36px; font-weight: 800; color: #0F4C5C; letter-spacing: -.5px; margin-bottom: 6px; }
+  .boot .tag { font-size: 13px; }
+  .boot .spinner {
+    width: 36px; height: 36px; border: 3px solid #E2E8F0; border-top-color: #0F4C5C;
+    border-radius: 50%; margin-top: 24px;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="phone-wrap">
+  <div id="jp-app">
+    <div class="boot">
+      <div class="logo">JMK</div>
+      <div class="tag">Το ταξίδι σου ξεκινάει…</div>
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="jmk_config.js"></script>
+<script src="jmk_guest_persuasive.js"></script>
+<script>
+  // Read query params για auto-detect hotel from QR scan
+  const params = new URLSearchParams(location.search);
+  const hotelId = params.get('h') || 'h-naxos-1';
+  const guestId = params.get('g') || 'g-maria';
+  const guestName = params.get('name') || 'Maria';
+  const room     = params.get('r') || '';
+
+  // Wait for backend to respond before mounting (prevents flash of error)
+  async function probe() {
+    const url = (window.JMK_API_URL || '') + '/api/health';
+    try { const r = await fetch(url); if (r.ok) return true; } catch {}
+    return false;
+  }
+
+  (async () => {
+    // Try to detect island from hotel
+    let islandId = 'isl-naxos';
+    try {
+      const ok = await probe();
+      if (ok) {
+        const h = await fetch((window.JMK_API_URL || '') + '/api/collections/hotels/' + hotelId);
+        if (h.ok) {
+          const data = await h.json();
+          islandId = data.islandId || islandId;
+        }
+      }
+    } catch {}
+
+    JMKPersuasive.mount('jp-app', {
+      hotelId,
+      guestId,
+      guestName,
+      room,
+      islandId
+    });
+  })();
+</script>
+</body>
+</html>

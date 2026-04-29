@@ -288,3 +288,93 @@ module.exports.activities.forEach(a => {
 
 module.exports.cancellationPolicies = CANCELLATION_POLICIES;
 
+// ============================================================
+//  v1.4 — Restaurants & Delivery
+// ============================================================
+
+// Add restaurant + delivery categories αν δεν υπάρχουν ήδη
+const existingCats = new Set(module.exports.categories.map(c => c.id));
+if (!existingCats.has('restaurant')) {
+  module.exports.categories.push({ id: 'restaurant', name: 'Εστιατόρια', icon: '🍽', defaultDuration: '90 λεπτά' });
+}
+
+// Restaurant + delivery partners (νέοι)
+module.exports.partners.push(
+  { id: 'p-naxos-tav-1', name: 'Διονύσης Καρπούζης', businessName: 'Ταβέρνα Καπετάνιος', islandId: 'isl-naxos', category: 'restaurant', email: 'kapetanios@naxos.gr', phone: '+30 22850 23890', vat: '555666777', iban: 'GR12 0110 1250 0000 0005 5566 677', status: 'approved', rating: 4.7, reviewCount: 285, joinedAt: '2026-02-01', totalEarnings: 5840, type: 'restaurant', cuisine: 'Παραδοσιακή ελληνική', openHours: '12:00-00:00' },
+  { id: 'p-paros-tav-1', name: 'Σοφία Μαυρομάτη', businessName: 'Το Σπίτι της Σοφίας', islandId: 'isl-paros', category: 'restaurant', email: 'sofia@paros-spiti.gr', phone: '+30 22840 23145', vat: '666777888', iban: 'GR23 0110 1250 0000 0006 6677 788', status: 'approved', rating: 4.9, reviewCount: 412, joinedAt: '2026-01-15', totalEarnings: 7820, type: 'restaurant', cuisine: 'Νησιώτικη haute', openHours: '18:00-23:30' },
+  { id: 'p-naxos-deliv', name: 'Νάξος Express', businessName: 'Naxos Express Delivery', islandId: 'isl-naxos', category: 'delivery', email: 'orders@naxosexpress.gr', phone: '+30 22850 51200', vat: '888999000', iban: 'GR45 0110 1250 0000 0008 8899 900', status: 'approved', rating: 4.5, reviewCount: 178, joinedAt: '2025-12-01', totalEarnings: 3290, type: 'delivery', deliveryFee: 2.50, deliveryRadius: 8, eta: '30-45 min', cuisine: 'Mixed (γύρος, pizza, ρόλλα)', openHours: '11:00-01:00' }
+);
+
+// Menu items (νέο collection)
+const restaurantPhotos = {
+  greek_starter:  'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=800',
+  greek_main:     'https://images.unsplash.com/photo-1544025162-d76694265947?w=800',
+  greek_dessert:  'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=800',
+  greek_seafood:  'https://images.unsplash.com/photo-1559847844-5315695dadae?w=800',
+  greek_salad:    'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800',
+  greek_grill:    'https://images.unsplash.com/photo-1558030006-450675393462?w=800',
+  pizza:          'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800',
+  burger:         'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800',
+  gyros:          'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800',
+  pasta:          'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800',
+  drinks:         'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800'
+};
+
+module.exports.menuItems = [
+  // Ταβέρνα Καπετάνιος (Νάξος)
+  { id: 'mi-tav1-1', partnerId: 'p-naxos-tav-1', category: 'starter', name: 'Τηγανητός λευκός κολοκύθας με τζατζίκι', description: 'Φρεσκοκομμένα φετάκια κολοκυθιού, ελαφρώς τηγανισμένα.', price: 6.50, photo: restaurantPhotos.greek_starter, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-tav1-2', partnerId: 'p-naxos-tav-1', category: 'starter', name: 'Σαγανάκι με μέλι Αρρανίτη', description: 'Γραβιέρα σαγανάκι με ντόπιο μέλι θυμαριού.', price: 7.80, photo: restaurantPhotos.greek_starter, available: true, allergens: ['γαλακτοκομικά'] },
+  { id: 'mi-tav1-3', partnerId: 'p-naxos-tav-1', category: 'salad', name: 'Χωριάτικη με κρητικό παξιμάδι', description: 'Φρέσκο τομάτα Νάξου, αγγούρι, φέτα ΠΟΠ, ελιές Καλαμών, παξιμάδι κρητικό.', price: 9.50, photo: restaurantPhotos.greek_salad, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-tav1-4', partnerId: 'p-naxos-tav-1', category: 'main', name: 'Αρνί κλέφτικο σε λαδόκολλα', description: 'Αργοψημένο 4 ώρες με ντόπια μυρωδικά και πατάτες.', price: 16.50, photo: restaurantPhotos.greek_main, available: true, allergens: [] },
+  { id: 'mi-tav1-5', partnerId: 'p-naxos-tav-1', category: 'main', name: 'Φρέσκο μπαρμπούνι ψητό', description: 'Της ημέρας, με ρύζι λεμονάτο και χόρτα.', price: 22.00, photo: restaurantPhotos.greek_seafood, available: true, allergens: ['ψάρι'] },
+  { id: 'mi-tav1-6', partnerId: 'p-naxos-tav-1', category: 'main', name: 'Παϊδάκια αρνίσια στη σχάρα', description: '6 παϊδάκια ντόπιο αρνί, τηγανητές πατάτες, ρίγανη.', price: 18.50, photo: restaurantPhotos.greek_grill, available: true, allergens: [] },
+  { id: 'mi-tav1-7', partnerId: 'p-naxos-tav-1', category: 'dessert', name: 'Σπιτικό γαλακτομπούρεκο', description: 'Σιροπιαστό, με κανέλα και παγωτό βανίλια.', price: 5.50, photo: restaurantPhotos.greek_dessert, available: true, allergens: ['γαλακτοκομικά','γλουτένη','αυγά'] },
+  { id: 'mi-tav1-8', partnerId: 'p-naxos-tav-1', category: 'drink', name: 'Κρασί τοπικό λευκό 500ml', description: 'Κρασί ντόπιο της οικογένειας από αμπελώνες Απειράνθου.', price: 8.00, photo: restaurantPhotos.drinks, available: true, allergens: ['θειώδη'] },
+
+  // Το Σπίτι της Σοφίας (Πάρος)
+  { id: 'mi-sof-1', partnerId: 'p-paros-tav-1', category: 'starter', name: 'Καρπάτσιο τόνου με κάππαρη', description: 'Φρέσκος ωμός τόνος, κάππαρη Σαντορίνης, λεμονοθυμαρόλαδο.', price: 14.00, photo: restaurantPhotos.greek_seafood, available: true, allergens: ['ψάρι'] },
+  { id: 'mi-sof-2', partnerId: 'p-paros-tav-1', category: 'starter', name: 'Κρητικό dakos σε ελαιόλαδο', description: 'Παξιμάδι κρητικό, τυρί ξινομυζήθρα, τομάτα.', price: 8.50, photo: restaurantPhotos.greek_starter, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-sof-3', partnerId: 'p-paros-tav-1', category: 'main', name: 'Μοσχάρι sous-vide με γλάσο πορτοκαλιού', description: '180g φιλέτο 24ωρης ωρίμανσης με μους πατάτας τρούφας.', price: 28.00, photo: restaurantPhotos.greek_main, available: true, allergens: ['γαλακτοκομικά'] },
+  { id: 'mi-sof-4', partnerId: 'p-paros-tav-1', category: 'main', name: 'Καλαμάρι γεμιστό με αμάνιτα', description: 'Φρέσκο καλαμάρι, μανιτάρια Πάρου, λεμόνι.', price: 19.50, photo: restaurantPhotos.greek_seafood, available: true, allergens: ['ψάρι','μαλάκια'] },
+  { id: 'mi-sof-5', partnerId: 'p-paros-tav-1', category: 'dessert', name: 'Σοκολατένιο σουφλέ με παγωτό τσίλι', description: 'Ζεστό σουφλέ μαύρης σοκολάτας 70%.', price: 9.00, photo: restaurantPhotos.greek_dessert, available: true, allergens: ['γαλακτοκομικά','γλουτένη','αυγά'] },
+
+  // Νάξος Express (delivery)
+  { id: 'mi-deliv-1', partnerId: 'p-naxos-deliv', category: 'gyros', name: 'Γύρος χοιρινός σε πίτα', description: 'Πατάτες, τζατζίκι, ντομάτα, κρεμμύδι.', price: 4.50, photo: restaurantPhotos.gyros, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-deliv-2', partnerId: 'p-naxos-deliv', category: 'gyros', name: 'Γύρος κοτόπουλο σε πίτα', description: 'Πατάτες, τζατζίκι, ντομάτα, κρεμμύδι.', price: 4.80, photo: restaurantPhotos.gyros, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-deliv-3', partnerId: 'p-naxos-deliv', category: 'pizza', name: 'Pizza Margherita 32cm', description: 'Σάλτσα τομάτας, mozzarella, βασιλικός.', price: 9.50, photo: restaurantPhotos.pizza, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-deliv-4', partnerId: 'p-naxos-deliv', category: 'pizza', name: 'Pizza Special 32cm', description: 'Ζαμπόν, μανιτάρια, πιπεριά, ελιές, mozzarella.', price: 12.50, photo: restaurantPhotos.pizza, available: true, allergens: ['γαλακτοκομικά','γλουτένη'] },
+  { id: 'mi-deliv-5', partnerId: 'p-naxos-deliv', category: 'burger', name: 'Cheeseburger 200g', description: 'Μοσχαρίσιο, cheddar, pickles, σαλάτα, πατάτες.', price: 10.50, photo: restaurantPhotos.burger, available: true, allergens: ['γαλακτοκομικά','γλουτένη','αυγά'] },
+  { id: 'mi-deliv-6', partnerId: 'p-naxos-deliv', category: 'pasta', name: 'Pasta carbonara', description: 'Σπαγγέτι, pancetta, αυγά, parmesan.', price: 11.00, photo: restaurantPhotos.pasta, available: true, allergens: ['γαλακτοκομικά','γλουτένη','αυγά'] },
+  { id: 'mi-deliv-7', partnerId: 'p-naxos-deliv', category: 'side', name: 'Πατάτες τηγανητές', description: 'Φρέσκες, χειροποίητες, χοντροκομμένες.', price: 4.00, photo: restaurantPhotos.gyros, available: true, allergens: [] },
+  { id: 'mi-deliv-8', partnerId: 'p-naxos-deliv', category: 'drink', name: 'Coca Cola 330ml', description: 'Ελληνικού bottling.', price: 2.50, photo: restaurantPhotos.drinks, available: true, allergens: [] }
+];
+
+// Sample orders για να μην είναι κενός ο πίνακας
+module.exports.orders = [
+  {
+    id: 'o-2901',
+    type: 'delivery',
+    partnerId: 'p-naxos-deliv',
+    hotelId: 'h-naxos-1',
+    guestId: 'g-maria',
+    items: [
+      { itemId: 'mi-deliv-1', name: 'Γύρος χοιρινός', price: 4.50, qty: 2, lineTotal: 9.00 },
+      { itemId: 'mi-deliv-3', name: 'Pizza Margherita', price: 9.50, qty: 1, lineTotal: 9.50 },
+      { itemId: 'mi-deliv-7', name: 'Πατάτες', price: 4.00, qty: 1, lineTotal: 4.00 }
+    ],
+    subtotal: 22.50,
+    deliveryFee: 2.50,
+    totalAmount: 25.00,
+    partnerAmount: 19.65, hotelCommission: 2.50, jmkCommission: 2.50, stripeFee: 0.60,
+    prepay: { pct: 100, amount: 25.00, status: 'paid', intentId: 'pi_stub_001', paidAt: '2026-07-19T20:14:00Z' },
+    deliveryAddress: 'Naxos Boutique Hotel, Δωμ. 204',
+    scheduledAt: '2026-07-19T20:45:00Z',
+    instructions: 'Χωρίς κρεμμύδι στους γύρους.',
+    status: 'delivered',
+    createdAt: '2026-07-19T20:14:00Z',
+    paidAt: '2026-07-19T20:14:30Z',
+    deliveredAt: '2026-07-19T20:48:00Z'
+  }
+];
+
+

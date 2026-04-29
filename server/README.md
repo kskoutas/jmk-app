@@ -1,12 +1,16 @@
-# JMK · Backend Server (v1.2)
+# JMK · Backend Server (v1.4)
 
-Node.js + Express + SQLite REST API + WebSocket chat + Cloudinary uploads. Powers cross-device sync για τα 4 JMK apps (Guest, Hotelier, Partner, Admin).
+Node.js + Express + SQLite REST API + WebSocket chat + Cloudinary uploads + Auto-prepayment + Anti-bypass v2. Powers cross-device sync για τα 4 JMK apps (Guest, Hotelier, Partner, Admin).
 
 **Τι περιλαμβάνει:**
 - REST API (CRUD για όλες τις οντότητες)
 - Auth με JWT (register/login/me)
-- **Booking flow** με commission split 10/10/80 και state machine
-- **Real-time chat** μέσω WebSockets, με anti-bypass detection
+- **Booking flow** με commission split 10/10/80 και state machine (chat → agreed → deposit_paid → paid → completed → reviewed)
+- **Real-time chat** μέσω WebSockets
+- **Anti-bypass v2** — έξυπνη ανίχνευση ελληνικών φράσεων (πάρε τηλέφωνο, εκτός εφαρμογής, μετρητά κλπ), risk score 0-100, auto-warn/auto-suspend partners
+- **Auto 20% deposit** όταν συμφωνηθεί τιμή στο chat — δεν περνάει από το χέρι σου
+- **Refund calculation** βάσει cancellation policy
+- **Admin moderation panel** — λίστα flagged, partner risk dashboard, manual warn/suspend/reactivate
 - **QR code generation** (PNG/SVG/dataURL)
 - **Weather forecast** μέσω Open-Meteo (δωρεάν, χωρίς key)
 - **Itinerary generator** (3 weather-aware πλάνα/μέρα)
@@ -35,7 +39,7 @@ node server.js
 Δοκίμασε ότι όλα δουλεύουν:
 ```bash
 bash tests/e2e.sh
-# Πρέπει να δεις: Passed: 46  Failed: 0
+# Πρέπει να δεις: Passed: 66  Failed: 0
 ```
 
 ---
@@ -178,6 +182,57 @@ PATCH  /api/activities/:id/details         { includes, excludes, languages, rule
 GET    /api/cancellation-policies          catalog (flexible/moderate/strict)
 ```
 
+### Auto Pre-Payment (NEW v1.3)
+```
+POST   /api/bookings/:id/agree             { agreedAmount?, agreedTime?, agreedSlotId? }
+                                           → δημιουργεί Stripe intent για 20% deposit
+                                           → status: chat → agreed (deposit pending)
+POST   /api/bookings/:id/confirm-deposit   { intentId? }
+                                           → marks deposit paid → status: deposit_paid
+POST   /api/bookings/:id/refund            { reason? }
+                                           → υπολογίζει refund βάσει cancellation policy
+```
+**Στόχος:** όταν συμφωνηθεί τιμή στο chat, το 20% (= JMK + Hotel commission) χρεώνεται αυτόματα. Δεν περνάει από manual παρέμβαση.
+
+### Anti-Bypass v2 (NEW v1.3)
+```
+POST   /api/antibypass/check               { text } → { flagged, kind, riskScore, severity, signals }
+```
+Ανιχνεύει: phone/email/IBAN/cards/social, ελληνικές φράσεις (πάρε με τηλέφωνο, εκτός εφαρμογής, πληρώνεις απευθείας μετρητά κλπ), συγκαλυμμένα νούμερα ("έξι εννιά..."), URLs.
+
+### Restaurants & Delivery (NEW v1.4)
+```
+GET    /api/restaurants?island=isl-naxos          λίστα εστιατορίων
+GET    /api/delivery?island=isl-naxos             λίστα delivery providers
+GET    /api/partners/:id/menu                     menu items + partner info
+POST   /api/partners/:id/menu                     partner adds menu item
+PATCH  /api/menu-items/:id                        update item (price, available)
+DELETE /api/menu-items/:id                        delete
+
+POST   /api/orders                                δημιουργία order + auto payment intent
+                                                  body: { partnerId, hotelId, guestId, type:'restaurant'|'delivery', items:[{itemId,qty,notes?}], deliveryAddress? }
+GET    /api/orders/:id
+GET    /api/orders?guestId=|partnerId=|hotelId=|status=
+POST   /api/orders/:id/confirm-payment            μετά την πληρωμή
+POST   /api/orders/:id/transition                 placed→confirmed→preparing→ready→delivered→reviewed
+```
+**Διαφορετικό payment flow:**
+- `restaurant` (κράτηση τραπεζιού): 20% deposit για no-show protection, υπόλοιπο στο εστιατόριο
+- `delivery`: **100% prepayment μέσω app**, ο guest δεν δίνει χρήματα στον driver, η εφαρμογή πληρώνει τον partner στο επόμενο payout cycle
+
+### Admin Moderation Panel (NEW v1.3)
+Auth: header `X-Admin-Key: <ADMIN_KEY env>` ή JWT με role='admin'.
+```
+GET    /api/admin/flagged?status=open|resolved   λίστα flagged messages (sorted by risk)
+POST   /api/admin/flagged/:id/resolve            { action: 'ignore'|'warn'|'suspend', reason }
+GET    /api/admin/partners/risk                  dashboard με risk score 7d ανά partner
+POST   /api/admin/partners/:id/warn              { reason } — manual warning
+POST   /api/admin/partners/:id/suspend           { reason } — pause partner + όλα τα activities
+POST   /api/admin/partners/:id/reactivate        { reason } — επαναφορά
+GET    /api/admin/moderation/thresholds          τα current auto-action thresholds
+```
+**Auto-actions:** Risk score 7d ≥ 150 ή 3+ flagged → auto-warn. ≥ 300 ή 5+ flagged → auto-suspend.
+
 ### WebSocket Chat (NEW v1.1)
 ```
 WS     /ws
@@ -230,6 +285,23 @@ server/
 └── tests/
     └── e2e.sh             # Smoke test 46 assertions
 ```
+
+---
+
+## Client Apps v2 (NEW v1.4)
+
+Έχουν φτιαχτεί **4 νέα HTML apps** που μιλάνε με το πραγματικό backend (αντικαθιστούν τα demo HTML):
+
+| App | URL | Σκοπός |
+|---|---|---|
+| **Guest v2** | `/JMK_Guest_v2.html?h=<hotelId>` | Persuasive UX με 3 tabs (Δραστηριότητες/Εστιατόρια/Delivery), photo gallery, ratings, social proof, single-click booking με auto 20% deposit |
+| **Partner v2** | `/JMK_Partner_v2.html?p=<partnerId>` | Airbnb-style host dashboard: today overview, calendar block/unblock με ένα click, photo upload drag-drop, menu management για restaurants/delivery, incoming bookings/orders με state transitions, real-time chat |
+| **Hotelier v2** | `/JMK_Hotelier_v2.html?h=<hotelId>` | Hotel dashboard: today stats, QR generator με print-A4 support (όλα τα δωμάτια σε 1 σελίδα), live booking feed, μηνιαίο statement, top partners, current guests |
+| **Admin v2** | `/JMK_Admin_v2.html?key=<adminKey>` | Stats, moderation με 1-click warn/suspend, risk dashboard, pending approvals, hotels, partners, settings |
+
+**Shared lib:** `jmk_v2_shared.js` (CSS theme + UI helpers όπως modal/toast/confirm + HTTP helpers).
+
+**Παλιά HTML** (`JMK_App.html`, `JMK_Guest_App.html`, `JMK_Partner_App.html`, `JMK_Hotelier_App.html`, `JMK_Admin_App.html`) παραμένουν ως έχουν για backwards compat. Τα QR codes πλέον δείχνουν στο **Guest v2**.
 
 ---
 

@@ -77,7 +77,8 @@ async function toDataUrl(payload, opts = {}) {
  * @param {string} [room] - optional room number για room-specific QR
  */
 function buildHotelUrl(baseUrl, hotel, room = null) {
-  const url = new URL('/JMK_Guest_App.html', baseUrl);
+  // Δείχνει στη νέα persuasive v2 σελίδα. Αν θες την παλιά, άλλαξε σε JMK_Guest_App.html.
+  const url = new URL('/JMK_Guest_v2.html', baseUrl);
   url.searchParams.set('h', hotel.id);
   if (hotel.qrCode) url.searchParams.set('s', hotel.qrCode); // shortcode (αν υπάρχει)
   if (room) url.searchParams.set('r', room);

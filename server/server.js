@@ -46,6 +46,10 @@ const payments     = require('./lib/payments');
 const uploads      = require('./lib/uploads');
 const availability = require('./lib/availability');
 const pricing      = require('./lib/pricing');
+const antibypass   = require('./lib/antibypass');
+const moderation   = require('./lib/moderation');
+const deposit      = require('./lib/deposit');
+const orders       = require('./lib/orders');
 
 const PORT       = process.env.PORT || 3000;
 const DB_PATH    = process.env.DB_PATH    || path.join(__dirname, 'jmk.sqlite');
@@ -545,7 +549,7 @@ app.post('/api/bookings/:id/messages', (req, res) => {
   const { text, fromId, fromName, fromRole } = req.body || {};
   if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text required' });
 
-  const detection = chat.detectBypass(text);
+  const detection = antibypass.detect(text);
   const message = {
     id: genId('msg'),
     bookingId,
@@ -556,25 +560,40 @@ app.post('/api/bookings/:id/messages', (req, res) => {
     originalText: detection.flagged ? text : undefined,
     flagged: detection.flagged,
     flagKind: detection.kind,
+    riskScore: detection.riskScore,
+    severity: detection.severity,
     readBy: [req.user?.id || fromId || 'anonymous'],
     createdAt: new Date().toISOString()
   };
   saveOne(`messages_${bookingId}`, message);
 
+  let modAction = null;
   if (detection.flagged) {
-    saveOne('flaggedMessages', {
+    const fm = {
       id: genId('fm'),
       bookingId,
       from: message.from,
       fromName: message.fromName,
+      fromRole: message.fromRole,
+      partnerId: booking.partnerId,
       text,
+      redactedText: detection.redactedText,
       kind: detection.kind,
+      riskScore: detection.riskScore,
+      severity: detection.severity,
+      signals: detection.signals,
       createdAt: message.createdAt,
       resolved: false
-    });
+    };
+    saveOne('flaggedMessages', fm);
+    // Auto-moderation αν ο partner είναι ο sender
+    if (message.fromRole === 'partner') {
+      try { modAction = moderation.processFlaggedMessage({ db, genId, bumpVersion }, fm); }
+      catch (e) { console.warn('[mod]', e.message); }
+    }
   }
 
-  res.json(message);
+  res.json({ message, moderation: modAction });
 });
 
 // ---------- Reviews ----------
@@ -781,6 +800,374 @@ app.patch('/api/activities/:id/details', (req, res) => {
 // ---------- Cancellation policies catalog ----------
 app.get('/api/cancellation-policies', (_req, res) => {
   res.json(SEED.cancellationPolicies || {});
+});
+
+// ============================================================
+// ============  v1.3 — Auto Pre-Payment & Moderation  ========
+// ============================================================
+
+// ---------- Agree on price → auto deposit intent ----------
+// POST /api/bookings/:id/agree { agreedAmount?, agreedTime?, agreedSlotId? }
+// 1. Updates booking με συμφωνημένη τιμή (αν δοθεί διαφορετική)
+// 2. Recompute commission
+// 3. Δημιουργεί Stripe intent για το 20% deposit
+// 4. Booking status: chat → agreed (deposit pending)
+// 5. Επιστρέφει intent + clientSecret για το app να χρεώσει
+app.post('/api/bookings/:id/agree', async (req, res) => {
+  const booking = getOne('bookings', req.params.id);
+  if (!booking) return res.status(404).json({ error: 'booking not found' });
+  if (booking.status !== 'chat' && booking.status !== 'pending') {
+    return res.status(400).json({ error: `cannot agree from state ${booking.status}` });
+  }
+
+  // Αν δίνεται διαφορετική τιμή απ' την αρχική, recompute
+  if (typeof req.body?.agreedAmount === 'number' && req.body.agreedAmount > 0) {
+    const hotel = getOne('hotels', booking.hotelId);
+    const newSplit = commission.calc(req.body.agreedAmount, {
+      hotelCommissionPct: hotel?.commissionPct,
+      settings: getSettingsObj()
+    });
+    booking.totalAmount     = newSplit.total;
+    booking.partnerAmount   = newSplit.partnerAmount;
+    booking.hotelCommission = newSplit.hotelCommission;
+    booking.jmkCommission   = newSplit.jmkCommission;
+    booking.stripeFee       = newSplit.stripeFee;
+  }
+
+  if (req.body?.agreedTime) booking.time = req.body.agreedTime;
+  if (req.body?.agreedSlotId) booking.slotId = req.body.agreedSlotId;
+
+  // Calculate deposit (20%)
+  const dep = deposit.calcDeposit(booking.totalAmount, getSettingsObj());
+
+  // Create Stripe intent (or stub) για το deposit
+  const intent = await payments.createIntent({
+    booking: { ...booking, totalAmount: dep.depositAmount }
+  });
+
+  booking.deposit = {
+    amount:    dep.depositAmount,
+    pct:       dep.depositPct,
+    status:    'pending',
+    intentId:  intent.id,
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 24 * 3600000).toISOString()
+  };
+  booking.status   = 'agreed';
+  booking.agreedAt = new Date().toISOString();
+  saveOne('bookings', booking);
+
+  res.json({
+    booking,
+    deposit: {
+      amount: dep.depositAmount,
+      pct: dep.depositPct,
+      currency: 'EUR',
+      intent
+    }
+  });
+});
+
+// POST /api/bookings/:id/confirm-deposit { intentId }
+// Στο stub mode καλείται από το client. Σε production καλείται από Stripe webhook.
+app.post('/api/bookings/:id/confirm-deposit', async (req, res) => {
+  const booking = getOne('bookings', req.params.id);
+  if (!booking) return res.status(404).json({ error: 'booking not found' });
+  if (!booking.deposit || booking.deposit.status === 'paid') {
+    return res.status(400).json({ error: 'no pending deposit' });
+  }
+
+  const intentId = req.body?.intentId || booking.deposit.intentId;
+  if (intentId && intentId.startsWith('pi_stub_')) {
+    await payments.confirmStub(intentId);
+  }
+
+  booking.deposit.status = 'paid';
+  booking.deposit.paidAt = new Date().toISOString();
+  if (commission.canTransition(booking.status, 'deposit_paid')) {
+    booking.status = 'deposit_paid';
+  }
+  saveOne('bookings', booking);
+
+  // Notify both sides
+  const activity = getOne('activities', booking.activityId);
+  const partner  = getOne('partners', booking.partnerId);
+  const guest    = getOne('guests', booking.guestId);
+  if (activity && partner) email.sendTemplate('paymentReceived', booking, activity, partner).catch(()=>{});
+  if (activity && guest)   email.sendTemplate('bookingConfirmed', booking, activity, guest).catch(()=>{});
+
+  res.json(booking);
+});
+
+// POST /api/bookings/:id/refund — calculates refund based on cancellation policy
+app.post('/api/bookings/:id/refund', async (req, res) => {
+  const booking = getOne('bookings', req.params.id);
+  if (!booking) return res.status(404).json({ error: 'booking not found' });
+  const activity = getOne('activities', booking.activityId);
+
+  const refund = deposit.calcRefund(booking, activity);
+
+  booking.cancellation = {
+    refundAmount: refund.refundAmount,
+    refundPct:    refund.refundPct,
+    reason:       req.body?.reason || refund.reason,
+    cancelledAt:  new Date().toISOString()
+  };
+  booking.status = 'cancelled';
+  saveOne('bookings', booking);
+
+  res.json({ booking, refund });
+});
+
+// ---------- Anti-bypass detection preview (test endpoint) ----------
+// POST /api/antibypass/check { text } → δείχνει τι θα ανίχνευε
+app.post('/api/antibypass/check', (req, res) => {
+  const text = req.body?.text || '';
+  res.json(antibypass.detect(text));
+});
+
+// ============================================================
+// ============  Admin Moderation Panel  ======================
+// ============================================================
+
+// Middleware για admin-only (light check)
+function adminOnly(req, res, next) {
+  if (req.user && req.user.role === 'admin') return next();
+  // Για demo επιτρέπω και χωρίς auth — production θα ήταν αυστηρό
+  if (req.headers['x-admin-key'] && req.headers['x-admin-key'] === (process.env.ADMIN_KEY || 'dev-admin-key')) return next();
+  return res.status(403).json({ error: 'admin only' });
+}
+
+// GET /api/admin/flagged?status=open|resolved&since=ms
+app.get('/api/admin/flagged', adminOnly, (req, res) => {
+  const rows = db.prepare('SELECT data FROM collections WHERE collection=? ORDER BY updated_at DESC').all('flaggedMessages');
+  let items = rows.map(r => JSON.parse(r.data));
+  if (req.query.status === 'open') items = items.filter(x => !x.resolved);
+  else if (req.query.status === 'resolved') items = items.filter(x => x.resolved);
+  if (req.query.since) {
+    const since = Number(req.query.since);
+    items = items.filter(x => new Date(x.createdAt).getTime() >= since);
+  }
+  // Sort by riskScore desc
+  items.sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0));
+  res.json({ count: items.length, items });
+});
+
+// POST /api/admin/flagged/:id/resolve { action: 'ignore'|'warn'|'suspend', reason }
+app.post('/api/admin/flagged/:id/resolve', adminOnly, (req, res) => {
+  const fm = getOne('flaggedMessages', req.params.id);
+  if (!fm) return res.status(404).json({ error: 'not found' });
+  const action = req.body?.action || 'ignore';
+  const reason = req.body?.reason || `Admin action: ${action}`;
+
+  let result = { action, fm };
+  const ctx = { db, genId, bumpVersion };
+
+  if (action === 'warn' && fm.partnerId) {
+    result.warning = moderation.warnPartner(ctx, fm.partnerId, reason);
+  } else if (action === 'suspend' && fm.partnerId) {
+    result.suspension = moderation.suspendPartner(ctx, fm.partnerId, reason);
+  }
+
+  fm.resolved = true;
+  fm.resolvedAt = new Date().toISOString();
+  fm.resolvedBy = req.user?.id || 'admin';
+  fm.resolvedAction = action;
+  fm.resolvedReason = reason;
+  saveOne('flaggedMessages', fm);
+
+  res.json(result);
+});
+
+// GET /api/admin/partners/risk — partners με τρέχον risk score
+app.get('/api/admin/partners/risk', adminOnly, (req, res) => {
+  const partners = db.prepare('SELECT data FROM collections WHERE collection=?').all('partners').map(r => JSON.parse(r.data));
+  const flagged  = db.prepare('SELECT data FROM collections WHERE collection=?').all('flaggedMessages').map(r => JSON.parse(r.data));
+
+  const enriched = partners.map(p => {
+    const risk = moderation.partnerRisk7d(flagged, p.id);
+    return {
+      id:           p.id,
+      name:         p.name,
+      businessName: p.businessName,
+      status:       p.status,
+      warnings:     p.warnings || 0,
+      lastWarnedAt: p.lastWarnedAt,
+      suspendedAt:  p.suspendedAt,
+      risk7d:       risk
+    };
+  }).sort((a, b) => b.risk7d.totalScore - a.risk7d.totalScore);
+
+  res.json(enriched);
+});
+
+// POST /api/admin/partners/:id/warn { reason }
+app.post('/api/admin/partners/:id/warn', adminOnly, (req, res) => {
+  const result = moderation.warnPartner({ db, genId, bumpVersion }, req.params.id, req.body?.reason || 'Manual admin warning');
+  if (!result) return res.status(404).json({ error: 'partner not found' });
+  res.json(result);
+});
+
+// POST /api/admin/partners/:id/suspend { reason }
+app.post('/api/admin/partners/:id/suspend', adminOnly, (req, res) => {
+  const result = moderation.suspendPartner({ db, genId, bumpVersion }, req.params.id, req.body?.reason || 'Manual admin suspension');
+  if (!result) return res.status(404).json({ error: 'partner not found' });
+  res.json(result);
+});
+
+// POST /api/admin/partners/:id/reactivate { reason }
+app.post('/api/admin/partners/:id/reactivate', adminOnly, (req, res) => {
+  const result = moderation.reactivatePartner({ db, genId, bumpVersion }, req.params.id, req.body?.reason || 'Manual admin reactivation');
+  if (!result) return res.status(404).json({ error: 'partner not found' });
+  res.json(result);
+});
+
+// GET /api/admin/moderation/thresholds
+app.get('/api/admin/moderation/thresholds', adminOnly, (_req, res) => {
+  res.json(moderation.THRESHOLDS);
+});
+
+// ============================================================
+// ============  v1.4 — Restaurants & Delivery  ===============
+// ============================================================
+
+// ---------- Menu items per partner ----------
+// GET /api/partners/:id/menu — όλα τα menu items του partner
+app.get('/api/partners/:id/menu', (req, res) => {
+  const partner = getOne('partners', req.params.id);
+  if (!partner) return res.status(404).json({ error: 'partner not found' });
+  const all = db.prepare('SELECT data FROM collections WHERE collection=?').all('menuItems').map(r => JSON.parse(r.data));
+  const items = all.filter(m => m.partnerId === req.params.id);
+  res.json({
+    partner: {
+      id: partner.id,
+      name: partner.businessName || partner.name,
+      type: partner.type || partner.category,
+      cuisine: partner.cuisine,
+      rating: partner.rating,
+      reviewCount: partner.reviewCount,
+      deliveryFee: partner.deliveryFee,
+      eta: partner.eta,
+      openHours: partner.openHours,
+      islandId: partner.islandId
+    },
+    items
+  });
+});
+
+// POST /api/partners/:id/menu — partner adds menu item
+app.post('/api/partners/:id/menu', (req, res) => {
+  const partner = getOne('partners', req.params.id);
+  if (!partner) return res.status(404).json({ error: 'partner not found' });
+  const item = Object.assign({}, req.body, {
+    id: req.body.id || genId('mi'),
+    partnerId: partner.id,
+    available: req.body.available !== false,
+    createdAt: new Date().toISOString()
+  });
+  saveOne('menuItems', item);
+  res.json(item);
+});
+
+// PATCH /api/menu-items/:id
+app.patch('/api/menu-items/:id', (req, res) => {
+  const item = getOne('menuItems', req.params.id);
+  if (!item) return res.status(404).json({ error: 'not found' });
+  Object.assign(item, req.body, { updatedAt: new Date().toISOString() });
+  saveOne('menuItems', item);
+  res.json(item);
+});
+
+// DELETE /api/menu-items/:id
+app.delete('/api/menu-items/:id', (req, res) => {
+  db.prepare('DELETE FROM collections WHERE collection=? AND id=?').run('menuItems', req.params.id);
+  bumpVersion();
+  res.json({ deleted: true });
+});
+
+// GET /api/restaurants?island=isl-naxos — όλα τα restaurants (και delivery αν type=delivery)
+app.get('/api/restaurants', (req, res) => {
+  const all = db.prepare('SELECT data FROM collections WHERE collection=?').all('partners').map(r => JSON.parse(r.data));
+  let items = all.filter(p => (p.type === 'restaurant' || p.category === 'restaurant') && p.status === 'approved');
+  if (req.query.island) items = items.filter(p => p.islandId === req.query.island);
+  res.json(items);
+});
+
+app.get('/api/delivery', (req, res) => {
+  const all = db.prepare('SELECT data FROM collections WHERE collection=?').all('partners').map(r => JSON.parse(r.data));
+  let items = all.filter(p => (p.type === 'delivery' || p.category === 'delivery') && p.status === 'approved');
+  if (req.query.island) items = items.filter(p => p.islandId === req.query.island);
+  res.json(items);
+});
+
+// ---------- Orders ----------
+// POST /api/orders { partnerId, hotelId, guestId, type:'restaurant'|'delivery', items:[{itemId,qty,notes?}], deliveryAddress?, scheduledAt? }
+app.post('/api/orders', async (req, res) => {
+  try {
+    const ctx = { db, getOne, saveOne, genId, getSettings: getSettingsObj };
+    const order = orders.createOrder(ctx, req.body || {});
+
+    // Auto-create payment intent (full prepay για delivery, 20% για restaurant)
+    const intent = await payments.createIntent({
+      booking: { ...order, totalAmount: order.prepay.amount }
+    });
+    order.prepay.intentId = intent.id;
+    order.prepay.createdAt = new Date().toISOString();
+
+    saveOne('orders', order);
+    res.json({ order, intent });
+  } catch (e) {
+    res.status(e.code || 500).json({ error: e.message });
+  }
+});
+
+// GET /api/orders/:id
+app.get('/api/orders/:id', (req, res) => {
+  const o = getOne('orders', req.params.id);
+  if (!o) return res.status(404).json({ error: 'not found' });
+  res.json(o);
+});
+
+// GET /api/orders?guestId=...|partnerId=...|hotelId=...
+app.get('/api/orders', (req, res) => {
+  let all = db.prepare('SELECT data FROM collections WHERE collection=?').all('orders').map(r => JSON.parse(r.data));
+  if (req.query.guestId)   all = all.filter(o => o.guestId === req.query.guestId);
+  if (req.query.partnerId) all = all.filter(o => o.partnerId === req.query.partnerId);
+  if (req.query.hotelId)   all = all.filter(o => o.hotelId === req.query.hotelId);
+  if (req.query.status)    all = all.filter(o => o.status === req.query.status);
+  all.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(all);
+});
+
+// POST /api/orders/:id/confirm-payment { intentId? }
+app.post('/api/orders/:id/confirm-payment', async (req, res) => {
+  const o = getOne('orders', req.params.id);
+  if (!o) return res.status(404).json({ error: 'not found' });
+  const intentId = req.body?.intentId || o.prepay?.intentId;
+  if (intentId && intentId.startsWith('pi_stub_')) {
+    await payments.confirmStub(intentId);
+  }
+  o.prepay.status = 'paid';
+  o.prepay.paidAt = new Date().toISOString();
+  o.paidAt = o.prepay.paidAt;
+  if (o.status === 'placed') o.status = 'confirmed';
+  saveOne('orders', o);
+  res.json(o);
+});
+
+// POST /api/orders/:id/transition { to }
+app.post('/api/orders/:id/transition', (req, res) => {
+  const o = getOne('orders', req.params.id);
+  if (!o) return res.status(404).json({ error: 'not found' });
+  const to = req.body?.to;
+  if (!orders.canTransitionOrder(o.status, to)) {
+    return res.status(400).json({ error: `cannot transition ${o.status} → ${to}` });
+  }
+  o.status = to;
+  if (to === 'delivered') o.deliveredAt = new Date().toISOString();
+  if (to === 'cancelled') o.cancelledAt = new Date().toISOString();
+  saveOne('orders', o);
+  res.json(o);
 });
 
 // Fallback to index for unknown routes (single-page-style)

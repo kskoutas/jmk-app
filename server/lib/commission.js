@@ -74,26 +74,29 @@ function calc(totalAmount, opts = {}) {
 function round2(x) { return Math.round(x * 100) / 100; }
 
 /**
- * Booking state machine. Επιτρεπόμενα transitions.
- *   pending  → chat            (guest κάνει request, partner δεν απάντησε ακόμα)
- *   chat     → agreed          (συμφώνησαν στις λεπτομέρειες)
- *   agreed   → paid            (guest πλήρωσε με Stripe)
- *   paid     → completed       (η δραστηριότητα ολοκληρώθηκε)
- *   completed→ reviewed        (ο guest άφησε review)
- *   any      → cancelled       (από οποιοδήποτε state, με reason)
- *   any      → disputed        (admin intervention)
+ * Booking state machine v2 — με auto deposit step.
+ *   pending      → chat               (guest κάνει request)
+ *   chat         → agreed             (συμφώνησαν, deposit pending — μπαίνει deposit object)
+ *   agreed       → deposit_paid       (το 20% deposit καταβλήθηκε — booking κλείδωσε)
+ *   deposit_paid → paid               (πλήρης πληρωμή — όλα ΟΚ)
+ *   deposit_paid → completed          (το activity ολοκληρώθηκε χωρίς full payment app)
+ *   paid         → completed
+ *   completed    → reviewed
+ *   any          → cancelled (με refund logic)
+ *   any          → disputed (admin)
  */
-const STATES = ['pending', 'chat', 'agreed', 'paid', 'completed', 'reviewed', 'cancelled', 'disputed'];
+const STATES = ['pending', 'chat', 'agreed', 'deposit_paid', 'paid', 'completed', 'reviewed', 'cancelled', 'disputed'];
 
 const TRANSITIONS = {
-  pending:   ['chat', 'cancelled'],
-  chat:      ['agreed', 'cancelled'],
-  agreed:    ['paid', 'cancelled'],
-  paid:      ['completed', 'cancelled', 'disputed'],
-  completed: ['reviewed', 'disputed'],
-  reviewed:  ['disputed'],
-  cancelled: [],
-  disputed:  ['paid', 'completed', 'cancelled'] // admin can resolve
+  pending:      ['chat', 'cancelled'],
+  chat:         ['agreed', 'cancelled'],
+  agreed:       ['deposit_paid', 'paid', 'cancelled'],
+  deposit_paid: ['paid', 'completed', 'cancelled', 'disputed'],
+  paid:         ['completed', 'cancelled', 'disputed'],
+  completed:    ['reviewed', 'disputed'],
+  reviewed:     ['disputed'],
+  cancelled:    [],
+  disputed:     ['paid', 'deposit_paid', 'completed', 'cancelled'] // admin can resolve
 };
 
 // Backwards-compat: old seed data uses 'confirmed' as a synonym for 'paid'

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JMK · Partner Dashboard</title>
+</head>
+<body>
+<div id="jp2-app">
+  <div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,sans-serif;color:#64748B">
+    <div style="font-size:36px;font-weight:800;color:#0F4C5C;letter-spacing:-.5px">JMK Partner</div>
+    <div style="font-size:13px;margin-top:6px">Φόρτωση…</div>
+    <div style="width:36px;height:36px;border:3px solid #E2E8F0;border-top-color:#0F4C5C;border-radius:50%;margin-top:24px;animation:spin .8s linear infinite"></div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
+</div>
+
+<script src="jmk_config.js"></script>
+<script src="jmk_v2_shared.js"></script>
+<script src="jmk_partner_v2.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  JMKPartnerV2.mount('jp2-app', {
+    partnerId: params.get('p') || 'p-niko'
+  });
+</script>
+</body>
+</html>

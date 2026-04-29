@@ -221,6 +221,102 @@ assert_contains "$UP" '"url"' "uploaded file has url"
 WINE=$(curl -s "$BASE/api/collections/activities/a-wine")
 assert_contains "$WINE" 'jmk-test\|local\|cloudinary' "uploaded photo attached to activity"
 
+# ============================================================
+# v1.3 — Auto Pre-Payment + Anti-Bypass v2 + Moderation
+# ============================================================
+
+# ---- Anti-bypass v2: Greek phrase detection ----
+log "Anti-bypass v2 — έξυπνη ανίχνευση"
+AB1=$(curl -s -X POST "$BASE/api/antibypass/check" -H 'Content-Type: application/json' \
+    -d '{"text":"Καλημέρα, να συνεννοηθούμε εκτός εφαρμογής για καλύτερη τιμή"}')
+assert_contains "$AB1" '"flagged":true' "Detects εκτός εφαρμογής"
+assert_contains "$AB1" 'offplatform' "Categorized as offplatform"
+
+AB2=$(curl -s -X POST "$BASE/api/antibypass/check" -H 'Content-Type: application/json' \
+    -d '{"text":"Πάρε με τηλέφωνο να τα πούμε"}')
+assert_contains "$AB2" '"flagged":true' "Detects πάρε με τηλέφωνο"
+assert_contains "$AB2" 'solicit_call' "Categorized as solicit_call"
+
+AB3=$(curl -s -X POST "$BASE/api/antibypass/check" -H 'Content-Type: application/json' \
+    -d '{"text":"Πληρώνεις απευθείας σε εμένα μετρητά"}')
+assert_contains "$AB3" 'cash_payment' "Detects cash payment intent"
+
+# Disguised numbers
+AB4=$(curl -s -X POST "$BASE/api/antibypass/check" -H 'Content-Type: application/json' \
+    -d '{"text":"Το νουμερό μου είναι έξι εννιά ένα δύο τρία τέσσερα πέντε έξι"}')
+assert_contains "$AB4" 'disguised_number' "Detects disguised numbers"
+
+# Risk score
+SCORE=$(echo "$AB1" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{console.log(JSON.parse(d).riskScore)});")
+if [ "$SCORE" -ge 30 ]; then pass "Risk score >= 30 (got $SCORE)"; else fail "Risk score too low: $SCORE"; fi
+
+# ---- Auto deposit on agree ----
+log "Auto 20% deposit when price agreed"
+B=$(curl -s -X POST "$BASE/api/bookings" -H 'Content-Type: application/json' \
+    -d '{"activityId":"a-cruise","hotelId":"h-naxos-1","guestId":"g-maria","date":"2026-06-10","time":"09:00","slotId":"ts-boat-0","people":2}')
+BID=$(echo "$B" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).id));")
+
+# Agree at €250 (different from initial estimate)
+AG=$(curl -s -X POST "$BASE/api/bookings/$BID/agree" -H 'Content-Type: application/json' \
+    -d '{"agreedAmount":250}')
+assert_contains "$AG" '"deposit"' "Agree returns deposit details"
+assert_contains "$AG" '"intent"' "Deposit includes payment intent"
+assert_contains "$AG" '"status":"agreed"' "Booking status → agreed"
+
+# Verify deposit is 20% of 250 = 50
+DEPAMT=$(echo "$AG" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).deposit.amount));")
+if [ "$DEPAMT" = "50" ]; then pass "Deposit = 20% of €250 = €50"; else fail "Deposit wrong: $DEPAMT"; fi
+
+# Confirm deposit
+CD=$(curl -s -X POST "$BASE/api/bookings/$BID/confirm-deposit" -H 'Content-Type: application/json' -d '{}')
+assert_contains "$CD" '"status":"deposit_paid"' "After confirm → deposit_paid"
+
+# ---- Refund calculation ----
+log "Refund on cancel"
+RF=$(curl -s -X POST "$BASE/api/bookings/$BID/refund" -H 'Content-Type: application/json' -d '{"reason":"guest_changed_mind"}')
+assert_contains "$RF" '"refund"' "Refund object returned"
+assert_contains "$RF" '"status":"cancelled"' "Booking marked cancelled"
+
+# ---- Auto-moderation: partner sends 3 flagged → warn ----
+log "Auto-moderation: partner risk tracking"
+# Reset για clean state
+curl -s -X POST "$BASE/api/reset" > /dev/null
+
+# Send 3 flagged messages from p-niko on different bookings
+for i in 1 2 3; do
+  curl -s -X POST "$BASE/api/bookings/b-2826/messages" -H 'Content-Type: application/json' \
+    -d "{\"text\":\"Πάρε με τηλέφωνο 6912345$i$i$i να συμφωνήσουμε εκτός εφαρμογής μετρητά\",\"fromId\":\"p-niko\",\"fromName\":\"Niko\",\"fromRole\":\"partner\"}" > /dev/null
+done
+
+# Check that partner now has warnings
+RISK=$(curl -s "$BASE/api/admin/partners/risk" -H 'X-Admin-Key: dev-admin-key')
+NIKO_RISK=$(echo "$RISK" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const arr=JSON.parse(d);const n=arr.find(x=>x.id==='p-niko');console.log(n?(n.warnings||0)+'|'+n.status:'notfound')});")
+WARNINGS=$(echo "$NIKO_RISK" | cut -d'|' -f1)
+STATUS=$(echo "$NIKO_RISK" | cut -d'|' -f2)
+if [ "$WARNINGS" -ge 1 ] || [ "$STATUS" = "paused" ]; then
+  pass "Partner auto-warned/suspended (warnings=$WARNINGS, status=$STATUS)"
+else
+  fail "Partner not auto-warned (warnings=$WARNINGS, status=$STATUS)"
+fi
+
+# ---- Admin endpoints ----
+log "Admin moderation panel"
+FLAGS=$(curl -s "$BASE/api/admin/flagged?status=open" -H 'X-Admin-Key: dev-admin-key')
+assert_contains "$FLAGS" '"items"' "Admin gets flagged items list"
+assert_contains "$FLAGS" '"riskScore"' "Items include risk score"
+
+# Suspend partner manually
+SUSP=$(curl -s -X POST "$BASE/api/admin/partners/p-naxoshike/suspend" -H 'X-Admin-Key: dev-admin-key' -H 'Content-Type: application/json' -d '{"reason":"Testing"}')
+assert_contains "$SUSP" '"status":"paused"' "Manual suspend works"
+
+# Reactivate
+REA=$(curl -s -X POST "$BASE/api/admin/partners/p-naxoshike/reactivate" -H 'X-Admin-Key: dev-admin-key' -H 'Content-Type: application/json' -d '{"reason":"Testing reactivation"}')
+assert_contains "$REA" '"status":"approved"' "Reactivate works"
+
+# Without admin key → 403
+NOAUTH=$(curl -s -w "|HTTP:%{http_code}" "$BASE/api/admin/flagged")
+assert_contains "$NOAUTH" 'HTTP:403' "Unauthorized blocked"
+
 # ---- Summary ----
 echo ""
 echo "=================================================="
